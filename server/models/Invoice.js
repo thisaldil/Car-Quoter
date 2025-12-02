@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 const invoiceSchema = new Schema(
   {
+    invoiceId: { type: String, unique: true, sparse: true },
     userId: { type: String, required: true },
     date: { type: Date, default: Date.now },
     pdfUrl: { type: String, required: true },
@@ -10,46 +11,62 @@ const invoiceSchema = new Schema(
       type: String,
       required: true,
       enum: ["type1", "type2", "type3"],
-      default: "type1",
+      default: "type1"
     },
     template: {
       _id: { type: Schema.Types.ObjectId, ref: "Template" },
       company: {
         name: String,
         logo: String,
-        address: String,
-      },
+        address: String
+      }
     },
-    // Car invoice details
+
     invoiceDetails: {
+      vehicleName: String,
+      vehicleGrade: String,
+      details: String,
+      mileage: String,
+      year: String,
+      reportDate: String,
+      vehicleType: String,
+      model: String,
+      engineCapacity: String,
+      declaredValueYen: Number,
+      cid: Number,
+      surcharge: Number,
+      xid: Number,
+      luxuryTax: Number,
+      vat: Number,
+      vetCom: Number,
+      vetAndCom: Number,
+      totalDuty: Number,
+      priceYen: Number,
+      yenRate: Number,
+      priceLkr: Number,
+      totalCustomsDuty: Number,
+      clearingCharges: Number,
+      totalPriceApprox: Number,
+      totalCost: Number,
+      customsValue: Number,
+      cidPercent: Number,
+      surchargePercent: Number,
+      xidPercent: Number,
+      luxuryTaxPercent: Number,
+      vatPercent: Number,
+      vetComPercent: Number,
       consigneeName: String,
-      addressLine1: String,
-      addressLine2: String,
-      addressLine3: String,
       invoiceNo: String,
-      description: String,
-      items: [
-        {
-          make: String,
-          model: String,
-          chassisNo: String,
-          year: String,
-          hsCode: String,
-          qty: String,
-          fob: String,
-          insurance: String,
-          freight: String,
-          cif: String,
-        },
-      ],
+      vehicleImage: String
     },
+
     priceDetails: {
-      totalAmount: String,
+      totalAmount: Number,
       paymentMethod: String,
-      transactionId: String,
-    },
+      transactionId: String
+    }
   },
   { timestamps: true }
-); // <- this line adds createdAt and updatedAt
+);
 
 module.exports = mongoose.model("Invoice", invoiceSchema);

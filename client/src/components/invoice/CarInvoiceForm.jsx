@@ -229,386 +229,584 @@ const MODELS_BY_MAKE = {
   OTHERS: ["Other"],
 };
 
-export default function ProformaInvoiceForm({ onSave }) {
-  const [invoice, setInvoice] = useState({
-    consigneeName: "",
-    addressLine1: "",
-    addressLine2: "",
-    addressLine3: "",
-    invoiceNo: "",
-    date: new Date().toISOString().slice(0, 10),
-    description: "USED MOTOR VEHICLES",
-    invoiceType: "type1",
-    items: [
-      {
-        make: "",
-        model: "",
-        chassisNo: "",
-        year: "",
-        hsCode: "",
-        qty: "1 UNIT",
-        fob: "",
-        insurance: "",
-        freight: "",
-        cif: "",
-      },
-    ],
+export default function CarInvoiceForm({ onSave }) {
+  const [invoiceData, setInvoiceData] = useState({
+    // Invoice ID
+    invoiceId: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+
+    // Vehicle Information
+    vehicleName: "",
+    vehicleGrade: "",
+    details: "",
+    mileage: "",
+    year: "",
+
+    // Date
+    reportDate: new Date().toISOString().slice(0, 10),
+
+    // Custom Duty Breakdown
+    cid: 0,
+    surcharge: 0,
+    xid: 0,
+    luxuryTax: 0,
+    vat: 0,
+    vetAndCom: 0,
+    totalDuty: 0,
+
+    // Price Section
+    priceYen: 0,
+    yenRate: 2,
+    priceLkr: 0,
+    totalCustomsDuty: 0,
+    clearingCharges: 125000,
+    totalPriceApprox: 0,
+
+    // Image
+    vehicleImage: null,
+    vehicleImageUrl: "",
   });
 
-  const totalCIF = useMemo(
-    () =>
-      invoice.items.reduce((sum, r) => {
-        const cif = toNum(r.cif);
-        return sum + (isFinite(cif) ? cif : 0);
-      }, 0),
-    [invoice.items]
-  );
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedMake, setSelectedMake] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
 
-const handleItemChange = (index, key, value) => {
-  setInvoice((prev) => {
-    const next = { ...prev };
-    next.items = prev.items.map((it, i) =>
-      i === index ? { ...it, [key]: value } : it
-    );
-    
-    // Recalculate CIF when FOB, Insurance, Freight, or Qty changes
-    if (["fob", "insurance", "freight", "qty"].includes(key)) {
-      const row = next.items[index];
-      
-      // Extract numeric quantity (handles "1 UNIT", "2 UNITS", "2", etc.)
-      const qtyStr = String(row.qty || "1");
-      const qtyMatch = qtyStr.match(/(\d+)/);
-      const quantity = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
-      
-      // Calculate CIF per unit
-      const cifPerUnit = toNum(row.fob) + toNum(row.insurance) + toNum(row.freight);
-      
-      // Multiply by quantity
-      const totalCif = cifPerUnit * quantity;
-      
-      next.items[index].cif =
-        Number.isFinite(totalCif) && totalCif > 0 ? String(totalCif) : "";
+  // Get available models for selected make
+  const availableModels = selectedMake ? MODELS_BY_MAKE[selectedMake] || [] : [];
+
+  // Handle make selection
+  const handleMakeChange = (e) => {
+    const make = e.target.value;
+    setSelectedMake(make);
+    setSelectedModel(""); // Reset model when make changes
+  };
+
+  // Handle model selection
+  const handleModelChange = (e) => {
+    const model = e.target.value;
+    setSelectedModel(model);
+    // Auto-fill vehicle name with make and model
+    if (selectedMake && model) {
+      setInvoiceData((prev) => ({
+        ...prev,
+        vehicleName: `${selectedMake} ${model}`,
+      }));
     }
-    
-    if (key === "make") {
-      const models = MODELS_BY_MAKE[value] || [];
-      if (!models.includes(next.items[index].model)) {
-        next.items[index].model = "";
-      }
+  };
+
+  // Auto-calculate duty values
+  const calculateDuties = (baseValue) => {
+    const customsValue = baseValue * invoiceData.yenRate;
+    const calculatedCid = (customsValue * 30) / 100;
+    const calculatedSurcharge = (calculatedCid * 10) / 100;
+    const calculatedXid = (customsValue * 8) / 100;
+    const calculatedLuxuryTax = (customsValue * 15) / 100;
+    const calculatedVat = (customsValue * 18) / 100;
+    const calculatedVetAndCom = (customsValue * 2) / 100;
+
+    const calculatedTotalDuty =
+      calculatedCid +
+      calculatedSurcharge +
+      calculatedXid +
+      calculatedLuxuryTax +
+      calculatedVat +
+      calculatedVetAndCom;
+
+    const calculatedPriceLkr = customsValue;
+    const calculatedTotalCustomsDuty = calculatedTotalDuty;
+    const calculatedTotalPrice =
+      calculatedPriceLkr +
+      calculatedTotalCustomsDuty +
+      invoiceData.clearingCharges;
+
+    return {
+      cid: calculatedCid,
+      surcharge: calculatedSurcharge,
+      xid: calculatedXid,
+      luxuryTax: calculatedLuxuryTax,
+      vat: calculatedVat,
+      vetAndCom: calculatedVetAndCom,
+      totalDuty: calculatedTotalDuty,
+      priceLkr: calculatedPriceLkr,
+      totalCustomsDuty: calculatedTotalCustomsDuty,
+      totalPriceApprox: calculatedTotalPrice,
+    };
+  };
+
+  const handlePriceYenChange = (e) => {
+    const value = parseFloat(e.target.value) || 0;
+    const calculated = calculateDuties(value);
+    setInvoiceData((prev) => ({
+      ...prev,
+      priceYen: value,
+      ...calculated,
+    }));
+  };
+
+  const handleYenRateChange = (e) => {
+    const value = parseFloat(e.target.value) || 2;
+    const calculated = calculateDuties(invoiceData.priceYen);
+    setInvoiceData((prev) => ({
+      ...prev,
+      yenRate: value,
+      ...calculated,
+    }));
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setInvoiceData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setInvoiceData((prev) => ({
+          ...prev,
+          vehicleImage: file,
+          vehicleImageUrl: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
     }
-    return next;
-  });
-};
+  };
 
-  const addRow = () =>
-    setInvoice((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          make: "",
-          model: "",
-          chassisNo: "",
-          year: "",
-          hsCode: "",
-          qty: "1 UNIT",
-          fob: "",
-          insurance: "",
-          freight: "",
-          cif: "",
-        },
-      ],
-    }));
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
 
-  const removeRow = (index) =>
-    setInvoice((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
+  const handleDragLeave = () => {
+    setDragActive(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setInvoiceData((prev) => ({
+          ...prev,
+          vehicleImage: file,
+          vehicleImageUrl: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = () => {
+    onSave?.(invoiceData);
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Customer/Consignee Details */}
-      <section className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Customer Details
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <Field
-            label="Consignee (Company)"
-            value={invoice.consigneeName}
-            onChange={(v) => setInvoice((s) => ({ ...s, consigneeName: v }))}
-            required
-          />
-          <Field
-            label="Invoice No."
-            value={invoice.invoiceNo}
-            onChange={(v) => setInvoice((s) => ({ ...s, invoiceNo: v }))}
-            required
-          />
-          <Field
-            label="Date"
-            type="date"
-            value={invoice.date}
-            onChange={(v) => setInvoice((s) => ({ ...s, date: v }))}
-            required
-          />
-          <Field
-            label="Description"
-            value={invoice.description}
-            onChange={(v) => setInvoice((s) => ({ ...s, description: v }))}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Invoice Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={invoice.invoiceType}
-              onChange={(e) =>
-                setInvoice((s) => ({ ...s, invoiceType: e.target.value }))
-              }
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              required
-            >
-              <option value="type1">PERFORMA INVOICE</option>
-              <option value="type2">COMMERCIAL INVOICE</option>
-              <option value="type3">INVOICE</option>
-              <option value="type4">CASH RECEIPT</option>
-            </select>
-          </div>
-          <Field
-            label="Address Line 1"
-            value={invoice.addressLine1}
-            onChange={(v) => setInvoice((s) => ({ ...s, addressLine1: v }))}
-          />
-          <Field
-            label="Address Line 2"
-            value={invoice.addressLine2}
-            onChange={(v) => setInvoice((s) => ({ ...s, addressLine2: v }))}
-          />
-          <Field
-            label="Address Line 3"
-            value={invoice.addressLine3}
-            onChange={(v) => setInvoice((s) => ({ ...s, addressLine3: v }))}
-          />
-        </div>
-      </section>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">
+          Car Invoice Form
+        </h1>
 
-      {/* Vehicle Details */}
-      <section className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Vehicle Details
-          </h2>
+        {/* Main Layout: Left and Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Side - Tables (2 columns on lg screens) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Table 1: Vehicle Information */}
+            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-700 mb-4 border-b-2 border-blue-500 pb-2">
+                Vehicle Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Invoice ID (Auto-generated) */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Invoice ID (Auto-generated)
+                  </label>
+                  <input
+                    type="text"
+                    value={invoiceData.invoiceId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 font-mono text-sm"
+                    placeholder="Auto-generated Invoice ID"
+                    readOnly
+                  />
+                </div>
+
+                {/* Make Dropdown */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Make
+                  </label>
+                  <select
+                    value={selectedMake}
+                    onChange={handleMakeChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select Make --</option>
+                    {MAKES.map((make) => (
+                      <option key={make} value={make}>
+                        {make}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Model Dropdown */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Model
+                  </label>
+                  <select
+                    value={selectedModel}
+                    onChange={handleModelChange}
+                    disabled={!selectedMake}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">-- Select Model --</option>
+                    {availableModels.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Vehicle Name (Auto-filled) */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Name (Auto-filled)
+                  </label>
+                  <input
+                    type="text"
+                    name="vehicleName"
+                    value={invoiceData.vehicleName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                    placeholder="Auto-filled from Make & Model"
+                    readOnly
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Grade
+                  </label>
+                  <input
+                    type="text"
+                    name="vehicleGrade"
+                    value={invoiceData.vehicleGrade}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter vehicle grade"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Details
+                  </label>
+                  <textarea
+                    name="details"
+                    value={invoiceData.details}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter vehicle details"
+                    rows="3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Mileage
+                  </label>
+                  <input
+                    type="text"
+                    name="mileage"
+                    value={invoiceData.mileage}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 50000 km"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Year
+                  </label>
+                  <input
+                    type="text"
+                    name="year"
+                    value={invoiceData.year}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 2020"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Table 2: Date & Custom Duty Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Date Section */}
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <h2 className="text-lg font-bold text-gray-700 mb-4 border-b-2 border-green-500 pb-2">
+                  Date
+                </h2>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Report Date
+                  </label>
+                  <input
+                    type="date"
+                    name="reportDate"
+                    value={invoiceData.reportDate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+
+              {/* Custom Duty Breakdown */}
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <h2 className="text-lg font-bold text-gray-700 mb-4 border-b-2 border-orange-500 pb-2">
+                  Custom Duty Breakdown
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">CID (30%):</span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.cid.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">
+                      Surcharge (10%):
+                    </span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.surcharge.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">XID (8%):</span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.xid.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">
+                      Luxury Tax (15%):
+                    </span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.luxuryTax.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">VAT (18%):</span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.vat.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">
+                      Vet & Com (2%):
+                    </span>
+                    <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
+                      {invoiceData.vetAndCom.toFixed(2)}
+                    </span>
+                  </div>
+                  <hr className="my-2" />
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="text-gray-800">Total Duty:</span>
+                    <span className="bg-orange-100 px-3 py-1 rounded text-orange-700">
+                      {invoiceData.totalDuty.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table 3: Price Section (Full Width) */}
+            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-700 mb-4 border-b-2 border-purple-500 pb-2">
+                Price Section
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Price (¥)
+                  </label>
+                  <input
+                    type="number"
+                    name="priceYen"
+                    value={invoiceData.priceYen}
+                    onChange={handlePriceYenChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Yen Rate
+                  </label>
+                  <input
+                    type="number"
+                    name="yenRate"
+                    value={invoiceData.yenRate}
+                    onChange={handleYenRateChange}
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Price (LKR)
+                  </label>
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center">
+                    <span className="text-gray-700 font-semibold">
+                      {invoiceData.priceLkr.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Total Customs Duty
+                  </label>
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center">
+                    <span className="text-gray-700 font-semibold">
+                      {invoiceData.totalCustomsDuty.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Clearing Charges
+                  </label>
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center">
+                    <span className="text-gray-700 font-semibold">
+                      {invoiceData.clearingCharges.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Total Price
+                  </label>
+                  <div className="w-full px-3 py-2 border border-2 border-purple-500 rounded-md bg-purple-50 flex items-center">
+                    <span className="text-purple-700 font-bold text-lg">
+                      {invoiceData.totalPriceApprox.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Image Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 sticky top-8">
+              <h2 className="text-xl font-bold text-gray-700 mb-4 border-b-2 border-red-500 pb-2">
+                Image Section
+              </h2>
+
+              {/* Drag and Drop Area */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                  dragActive
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 bg-gray-50 hover:border-gray-400"
+                }`}
+              >
+                <input
+                  type="file"
+                  id="image-upload"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="cursor-pointer block"
+                >
+                  {invoiceData.vehicleImageUrl ? (
+                    <div>
+                      <img
+                        src={invoiceData.vehicleImageUrl}
+                        alt="Vehicle"
+                        className="w-full h-64 object-cover rounded-md mb-3"
+                      />
+                      <p className="text-sm text-gray-600">
+                        Click to change image
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-18-8l-4 4m0 0l4 4m-4-4h16"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Drag and drop an image here, or click to select
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Image URL Option */}
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Or paste Image URL
+                </label>
+                <input
+                  type="url"
+                  name="vehicleImageUrl"
+                  value={invoiceData.vehicleImageUrl}
+                  onChange={(e) =>
+                    setInvoiceData((prev) => ({
+                      ...prev,
+                      vehicleImageUrl: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              {invoiceData.vehicleImageUrl && !invoiceData.vehicleImageUrl.startsWith('data:') && (
+                <img
+                  src={invoiceData.vehicleImageUrl}
+                  alt="Vehicle URL"
+                  className="w-full h-64 object-cover rounded-md mt-3"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-end mt-12">
           <button
-            onClick={addRow}
-            className="flex items-center gap-2 px-3 py-2 rounded-md bg-orange-600 text-white hover:bg-orange-700"
+            onClick={handleSave}
+            className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-md"
           >
-            <PlusIcon className="w-4 h-4" /> Add Vehicle
+            Save Invoice
           </button>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-400 dark:border-gray-600 text-sm">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                <th className="border px-2 py-1">#</th>
-                <th className="border px-2 py-1">Make</th>
-                <th className="border px-2 py-1">Model</th>
-                <th className="border px-2 py-1">Chassis No</th>
-                <th className="border px-2 py-1">Year</th>
-                <th className="border px-2 py-1">HS Code</th>
-                <th className="border px-2 py-1">Qty</th>
-                <th className="border px-2 py-1">FOB</th>
-                <th className="border px-2 py-1">Insurance</th>
-                <th className="border px-2 py-1">Freight</th>
-                <th className="border px-2 py-1">CIF</th>
-                <th className="border px-2 py-1">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoice.items.map((row, i) => {
-                const models = MODELS_BY_MAKE[row.make] || [];
-                return (
-                  <tr key={i} className="text-gray-900 dark:text-gray-100">
-                    <td className="border px-2 py-1">{i + 1}</td>
-                    {/* Make */}
-                    <td className="border px-2 py-1">
-                      <select
-                        value={row.make}
-                        onChange={(e) =>
-                          handleItemChange(i, "make", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      >
-                        <option value="">— Select Make —</option>
-                        {MAKES.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    {/* Model (depends on Make) */}
-                    <td className="border px-2 py-1">
-                      <select
-                        value={row.model}
-                        onChange={(e) =>
-                          handleItemChange(i, "model", e.target.value)
-                        }
-                        disabled={!row.make}
-                        className="w-full bg-transparent outline-none"
-                      >
-                        {!row.make ? (
-                          <option value="">— Select make first —</option>
-                        ) : (
-                          <>
-                            <option value="">— Select Model —</option>
-                            {models.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </>
-                        )}
-                      </select>
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="text"
-                        value={row.chassisNo}
-                        onChange={(e) =>
-                          handleItemChange(i, "chassisNo", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="number"
-                        value={row.year}
-                        onChange={(e) =>
-                          handleItemChange(i, "year", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="text"
-                        value={row.hsCode}
-                        onChange={(e) =>
-                          handleItemChange(i, "hsCode", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="text"
-                        value={row.qty}
-                        onChange={(e) =>
-                          handleItemChange(i, "qty", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="number"
-                        value={row.fob}
-                        onChange={(e) =>
-                          handleItemChange(i, "fob", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="number"
-                        value={row.insurance}
-                        onChange={(e) =>
-                          handleItemChange(i, "insurance", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        type="number"
-                        value={row.freight}
-                        onChange={(e) =>
-                          handleItemChange(i, "freight", e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">{row.cif}</td>
-                    <td className="border px-2 py-1 text-center">
-                      <button
-                        onClick={() => removeRow(i)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="text-right mt-4 font-bold text-gray-900 dark:text-white">
-          Total CIF: {formatMoney(totalCIF)}
-        </div>
-      </section>
-
-      <div className="flex justify-end">
-        <button
-          onClick={() => onSave?.(invoice)}
-          className="px-6 py-2 rounded-md bg-orange-600 text-white hover:bg-orange-700"
-        >
-          Save Invoice
-        </button>
       </div>
     </div>
   );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required,
-  type = "text",
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        placeholder={placeholder}
-        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-        required={required}
-      />
-    </div>
-  );
-}
-
-function toNum(x) {
-  const n = typeof x === "string" ? Number(x.replace(/,/g, "")) : Number(x);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function formatMoney(n) {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n || 0);
 }

@@ -7,17 +7,16 @@ const app = express();
 
 app.use(express.json());
 
-// ---- Enhanced CORS (handles preflight + all responses) ----
+// ---- CORS ----
 const allowed = new Set([
   "https://car-invoicing-client.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173",
+  "http://localhost:5173"
 ]);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Allow requests with no origin (mobile apps, Postman, etc.)
   if (!origin) {
     res.setHeader("Access-Control-Allow-Origin", "*");
   } else if (allowed.has(origin)) {
@@ -26,26 +25,19 @@ app.use((req, res, next) => {
   }
 
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
-  // Add headers for Google OAuth popup issues
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
 
-  // Handle preflight requests
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
   next();
 });
+
 console.log("BE CID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
 // models
@@ -66,22 +58,24 @@ app.post("/ping", (req, res) => res.json({ ok: true, body: req.body || null }));
 
 // cloudinary signature
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+
 app.post("/generate-signature", (req, res) => {
   try {
     const { timestamp } = req.body;
-    if (!timestamp)
-      return res.status(400).json({ error: "Timestamp is required" });
+    if (!timestamp) return res.status(400).json({ error: "Timestamp is required" });
+
     const signature = crypto
       .createHash("sha1")
       .update(`timestamp=${timestamp}${CLOUDINARY_API_SECRET}`)
       .digest("hex");
+
     res.json({ signature });
   } catch {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Error handling middleware
+// error handler
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
   res.status(500).json({ error: "Internal Server Error" });
@@ -92,10 +86,20 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// connect DB once at cold start
-connectDB().catch((err) =>
-  console.error("MongoDB connection error:", err.message)
-);
+// connect DB
+connectDB().catch(err => console.error("MongoDB connection error:", err.message));
 
-// Vercel handler
+// -------------------------------------------------------------------
+// Local Development Mode
+// -------------------------------------------------------------------
+if (process.env.NODE_ENV === "development") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log("API running locally at http://localhost:" + PORT);
+  });
+}
+
+// -------------------------------------------------------------------
+// Vercel Export
+// -------------------------------------------------------------------
 module.exports = (req, res) => app(req, res);

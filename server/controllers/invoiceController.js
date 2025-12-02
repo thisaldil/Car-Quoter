@@ -39,7 +39,7 @@ exports.uploadInvoice = async (req, res) => {
   }
 };
 
-//save invoice details
+// save invoice details (with auto calculations)
 exports.saveInvoiceDetails = async (req, res) => {
   const {
     userId,
@@ -50,28 +50,50 @@ exports.saveInvoiceDetails = async (req, res) => {
     invoiceType,
   } = req.body;
 
-  // Verify the requesting user owns this data
   if (req.userId !== userId) {
     return res.status(403).json({ error: "Access denied" });
   }
 
-  if (
-    !userId ||
-    !pdfUrl ||
-    !template?._id ||
-    !invoiceDetails?.consigneeName ||
-    !invoiceDetails?.invoiceNo ||
-    !invoiceDetails?.items ||
-    !priceDetails ||
-    !invoiceType
-  ) {
+  if (!userId || !pdfUrl || !template?._id || !invoiceDetails || !invoiceType) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    // Validate invoice data
-    const validatedInvoiceDetails = validateInvoiceSchema(invoiceDetails);
+    // Extract values
+    const {
+      vehicleType,
+      model,
+      year,
+      engineCapacity,
+      declaredValueYen
+    } = invoiceDetails;
 
+    const yenRate = 2;
+    const cidPercent = 30;
+    const surchargePercent = 10;
+    const xidPercent = 8;
+    const luxuryTaxPercent = 15;
+    const vatPercent = 18;
+    const vetComPercent = 2;
+    const clearingCharges = 125000;
+
+    // Base price in LKR
+    const customsValue = declaredValueYen * yenRate;
+
+    // Calculations
+    const cid = (customsValue * cidPercent) / 100;
+    const surcharge = (cid * surchargePercent) / 100;
+    const xid = (customsValue * xidPercent) / 100;
+    const luxuryTax = (customsValue * luxuryTaxPercent) / 100;
+    const vat = (customsValue * vatPercent) / 100;
+    const vetCom = (customsValue * vetComPercent) / 100;
+
+    const totalDuty =
+      cid + surcharge + xid + luxuryTax + vat + vetCom;
+
+    const totalCost = customsValue + totalDuty + clearingCharges;
+
+    // Save invoice
     const invoice = new Invoice({
       userId,
       pdfUrl,
@@ -79,30 +101,59 @@ exports.saveInvoiceDetails = async (req, res) => {
       template: {
         _id: template._id,
         company: {
-          name: template.company?.name || template.name || "Company Name",
+          name: template.company?.name || "Company Name",
           logo: template.company?.logo || "",
           address: template.company?.address || "",
         },
       },
-      invoiceDetails: validatedInvoiceDetails,
+
+      invoiceDetails: {
+        vehicleType,
+        model,
+        year,
+        engineCapacity,
+        declaredValueYen,
+
+        yenRate,
+        customsValue,
+
+        cidPercent,
+        surchargePercent,
+        xidPercent,
+        luxuryTaxPercent,
+        vatPercent,
+        vetComPercent,
+
+        cid,
+        surcharge,
+        xid,
+        luxuryTax,
+        vat,
+        vetCom,
+
+        clearingCharges,
+        totalDuty,
+        totalCost,
+      },
+
       priceDetails: {
-        totalAmount: priceDetails.totalAmount,
-        paymentMethod: priceDetails.paymentMethod,
-        transactionId: priceDetails.transactionId,
+        totalAmount: Number(totalCost),
+        paymentMethod: priceDetails?.paymentMethod || "N/A",
+        transactionId: priceDetails?.transactionId || "",
       },
     });
 
     await invoice.save();
 
     res.status(201).json({ message: "Invoice saved successfully", invoice });
+
   } catch (err) {
     console.error("Error saving invoice:", err);
-    if (err.message.includes("Invalid data")) {
-      return res.status(400).json({ error: err.message });
-    }
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 
 //get invoice details by userId
 exports.getInvoiceDetailsByUserId = async (req, res) => {
@@ -321,7 +372,7 @@ exports.getMonthlyRevenue = async (req, res) => {
     });
 
     const totalRevenue = invoices.reduce((sum, inv) => {
-      return sum + (inv.priceDetails?.totalAmount || 0);
+      return sum + (Number(inv.priceDetails?.totalAmount) || 0);
     }, 0);
 
     res.status(200).json({ totalRevenue });

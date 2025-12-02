@@ -10,8 +10,8 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import logo from "../images/logo.png";
-import darklogo from "../images/drklogo.png";
+import logo from "../images/carquoterlogo.png";
+import darklogo from "../images/carquoterlogo.png";
 
 function Layout() {
   const navigate = useNavigate();

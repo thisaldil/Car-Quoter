@@ -89,7 +89,7 @@ const Register = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6 }}
-              src="/logo.png"
+              src="/carquoterlogo.png"
               alt="Logo"
               className="w-72 mb-6"
             />

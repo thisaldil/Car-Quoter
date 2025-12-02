@@ -98,14 +98,14 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const checkDuplicateInvoice = async (userId, invoiceNo) => {
+  const checkDuplicateInvoice = async (userId, invoiceId) => {
     try {
       const { data } = await api.get(
         `/invoice/getInvoiceDetailsByUserId/${userId}`
       );
       return (
         Array.isArray(data) &&
-        data.some((inv) => inv?.invoiceDetails?.invoiceNo === invoiceNo)
+        data.some((inv) => inv?.invoiceId === invoiceId)
       );
     } catch (error) {
       if (error?.response?.status === 404) {
@@ -138,22 +138,22 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     try {
       // --- INVOICE GENERATION MODE ---
       if (invoiceData) {
-        // Use invoiceNo for car invoices
-        const invoiceNo = invoiceData.invoiceNo;
-        if (!invoiceNo) {
-          toast.error("Invoice number is required.");
+        // Use invoiceId for car invoices
+        const invoiceId = invoiceData.invoiceId;
+        if (!invoiceId) {
+          toast.error("Invoice ID is required.");
           setUploading(false);
           return;
         }
         const currentDate = new Date().toISOString().split("T")[0];
-        const safeRef = String(invoiceNo).replace(/[^\w\-]+/g, "_");
+        const safeRef = String(invoiceId).replace(/[^\w\-]+/g, "_");
         const fileName = `${safeRef}-invoice-${currentDate}.pdf`;
 
-        // Duplicate check only if we have a real invoiceNo
+        // Duplicate check only if we have a real invoiceId
         let duplicateExists = false;
-        if (invoiceNo && invoiceNo !== "DRAFT") {
+        if (invoiceId && invoiceId !== "DRAFT") {
           try {
-            duplicateExists = await checkDuplicateInvoice(userId, invoiceNo);
+            duplicateExists = await checkDuplicateInvoice(userId, invoiceId);
           } catch (err) {
             toast.error(err.message || "Duplicate check failed");
             setUploading(false);
@@ -219,25 +219,48 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
         // Save car invoice record
         saveInvoicePayload = {
+          invoiceId: invoiceData.invoiceId || "",
           userId,
           pdfUrl: cloudinaryUrl,
           template: { _id: templateId },
           invoiceType: invoiceData.invoiceType || "type1",
           invoiceDetails: {
-            consigneeName: invoiceData.consigneeName || "",
-            addressLine1: invoiceData.addressLine1 || "",
-            addressLine2: invoiceData.addressLine2 || "",
-            addressLine3: invoiceData.addressLine3 || "",
-            invoiceNo: invoiceData.invoiceNo || "",
-            description: invoiceData.description || "",
-            items: invoiceData.items || [],
+            vehicleName: invoiceData.vehicleName || "",
+            vehicleGrade: invoiceData.vehicleGrade || "",
+            details: invoiceData.details || "",
+            mileage: invoiceData.mileage || "",
+            year: invoiceData.year || "",
+            reportDate: invoiceData.reportDate || "",
+            vehicleType: invoiceData.vehicleType || "",
+            model: invoiceData.model || "",
+            engineCapacity: invoiceData.engineCapacity || "",
+            declaredValueYen: invoiceData.priceYen || 0,
+            cid: invoiceData.cid || 0,
+            surcharge: invoiceData.surcharge || 0,
+            xid: invoiceData.xid || 0,
+            luxuryTax: invoiceData.luxuryTax || 0,
+            vat: invoiceData.vat || 0,
+            vetCom: invoiceData.vetAndCom || 0,
+            totalDuty: invoiceData.totalDuty || 0,
+            priceYen: invoiceData.priceYen || 0,
+            yenRate: invoiceData.yenRate || 2,
+            priceLkr: invoiceData.priceLkr || 0,
+            totalCustomsDuty: invoiceData.totalCustomsDuty || 0,
+            clearingCharges: invoiceData.clearingCharges || 0,
+            totalPriceApprox: invoiceData.totalPriceApprox || 0,
+            customsValue: invoiceData.priceLkr || 0,
+            cidPercent: 30,
+            surchargePercent: 10,
+            xidPercent: 8,
+            luxuryTaxPercent: 15,
+            vatPercent: 18,
+            vetComPercent: 2,
+            vehicleImage: invoiceData.vehicleImageUrl || "",
           },
           priceDetails: {
-            totalAmount: String(
-              invoiceData.totalCIF || invoiceData.totalAmount || 0
-            ),
-            transactionId: String(invoiceData.transactionId || ""),
-            paymentMethod: String(invoiceData.paymentMethod || ""),
+            totalAmount: invoiceData.totalPriceApprox || 0,
+            transactionId: invoiceData.transactionId || "",
+            paymentMethod: invoiceData.paymentMethod || "",
           },
         };
         const saveInvoiceRes = await api.post(
@@ -430,111 +453,152 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                     >
                       {INVOICE_TYPE_LABELS[invoiceData?.invoiceType] ||
                         invoiceData?.invoiceType ||
-                        "INVOICE"}
+                        "CAR INVOICE"}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-start mb-4">
-                    {/* Consignee Block */}
-                    <div className="flex">
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">
-                        Consignee:
+                    {/* Invoice ID & Vehicle Info */}
+                    <div className="flex-1">
+                      <div className="mb-2 font-mono text-xs bg-blue-50 dark:bg-blue-900 p-2 rounded text-blue-700 dark:text-blue-300">
+                        <span className="font-semibold">Invoice ID:</span> {invoiceData?.invoiceId || "--"}
+                      </div>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Vehicle:
                       </span>
                       <div>
                         <div className="font-semibold text-gray-800 dark:text-gray-100">
-                          {invoiceData?.consigneeName || "--"}
+                          {invoiceData?.vehicleName || "--"}
                         </div>
-                        <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
-                          {[
-                            invoiceData?.addressLine1,
-                            invoiceData?.addressLine2,
-                            invoiceData?.addressLine3,
-                          ]
-                            .filter(Boolean)
-                            .join("\n") || "--"}
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          Grade: {invoiceData?.vehicleGrade || "--"} | Year: {invoiceData?.year || "--"}
+                        </div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          Mileage: {invoiceData?.mileage || "--"}
                         </div>
                       </div>
                     </div>
-                    {/* Invoice No. & Date Block */}
+                    {/* Date Block */}
                     <div className="flex flex-col items-end text-sm">
                       <div className="text-gray-700 dark:text-gray-300 mb-1">
-                        <span className="font-medium">Invoice No.:</span>{" "}
-                        {invoiceData?.invoiceNo || "--"}
-                      </div>
-                      <div className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Date:</span>{" "}
-                        {invoiceData?.date || "--"}
+                        <span className="font-medium">Report Date:</span>{" "}
+                        {invoiceData?.reportDate || "--"}
                       </div>
                     </div>
                   </div>
 
+                  {/* Details */}
+                  {invoiceData?.details && (
+                    <div className="mb-4 p-3 bg-white dark:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">Details:</span> {invoiceData.details}
+                    </div>
+                  )}
+
+                  {/* Vehicle Image */}
+                  {invoiceData?.vehicleImageUrl && (
+                    <div className="mb-4">
+                      <img
+                        src={invoiceData.vehicleImageUrl}
+                        alt="Vehicle"
+                        className="max-h-32 max-w-xs rounded border border-gray-300 dark:border-gray-600"
+                      />
+                    </div>
+                  )}
+
+                  {/* Custom Duty Breakdown Table */}
                   <div className="mb-4">
-                    <span className="font-medium text-gray-800 dark:text-gray-100">
-                      Description:{" "}
-                    </span>
-                    <span className="text-gray-800 dark:text-gray-100">
-                      {invoiceData?.description || "USED MOTOR VEHICLES"}
-                    </span>
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
+                      Custom Duty Breakdown
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">CID (30%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.cid)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Surcharge (10%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.surcharge)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">XID (8%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.xid)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Luxury Tax (15%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.luxuryTax)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">VAT (18%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.vat)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Vet & Com (2%)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.vetAndCom)}
+                        </div>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900 p-2 rounded border-2 border-orange-300 dark:border-orange-600 col-span-2">
+                        <div className="text-gray-600 dark:text-gray-400">Total Duty</div>
+                        <div className="font-bold text-orange-700 dark:text-orange-300">
+                          {fmt(invoiceData?.totalDuty)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Vehicles table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 text-xs md:text-sm">
-                      <thead className="bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        <tr>
-                          <th className="border px-2 py-1">#</th>
-                          <th className="border px-2 py-1">Make</th>
-                          <th className="border px-2 py-1">Model</th>
-                          <th className="border px-2 py-1">Chassis No</th>
-                          <th className="border px-2 py-1">Year</th>
-                          <th className="border px-2 py-1">HS Code</th>
-                          <th className="border px-2 py-1">Qty</th>
-                          <th className="border px-2 py-1">FOB</th>
-                          <th className="border px-2 py-1">Insurance</th>
-                          <th className="border px-2 py-1">Freight</th>
-                          <th className="border px-2 py-1">CIF</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(invoiceData?.items || []).map((r, i) => (
-                          <tr
-                            key={i}
-                            className="text-gray-900 dark:text-gray-100"
-                          >
-                            <td className="border px-2 py-1">{i + 1}</td>
-                            <td className="border px-2 py-1">
-                              {r.make || "-"}
-                            </td>
-                            <td className="border px-2 py-1">
-                              {r.model || "-"}
-                            </td>
-                            <td className="border px-2 py-1">
-                              {r.chassisNo || "-"}
-                            </td>
-                            <td className="border px-2 py-1">
-                              {r.year || "-"}
-                            </td>
-                            <td className="border px-2 py-1">
-                              {r.hsCode || "-"}
-                            </td>
-                            <td className="border px-2 py-1">{r.qty || "-"}</td>
-                            <td className="border px-2 py-1">{fmt(r.fob)}</td>
-                            <td className="border px-2 py-1">
-                              {fmt(r.insurance)}
-                            </td>
-                            <td className="border px-2 py-1">
-                              {fmt(r.freight)}
-                            </td>
-                            <td className="border px-2 py-1">{fmt(r.cif)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Total CIF */}
-                  <div className="text-right mt-4 font-bold text-gray-900 dark:text-gray-100">
-                    Total CIF: {fmt(sumCIF(invoiceData?.items || []))}
+                  {/* Price Section Table */}
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
+                      Price Section
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Price (¥)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.priceYen)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Yen Rate</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {invoiceData?.yenRate?.toFixed(2) || "2.00"}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Price (LKR)</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.priceLkr)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Total Customs Duty</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.totalCustomsDuty)}
+                        </div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
+                        <div className="text-gray-600 dark:text-gray-400">Clearing Charges</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {fmt(invoiceData?.clearingCharges)}
+                        </div>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900 p-2 rounded border-2 border-purple-300 dark:border-purple-600">
+                        <div className="text-gray-600 dark:text-gray-400">Total Price</div>
+                        <div className="font-bold text-purple-700 dark:text-purple-300">
+                          {fmt(invoiceData?.totalPriceApprox)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
