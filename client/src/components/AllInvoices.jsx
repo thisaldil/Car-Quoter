@@ -16,7 +16,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     const fetchInvoices = async () => {
       try {
         const res = await api.get(
-          `https://car-invoicing.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
+          `/invoice/getInvoiceDetailsByUserId/${userId}`
         );
         const sortedInvoices = res.data.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
@@ -92,9 +92,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
   const handleDeleteInvoice = async (invoiceId) => {
     if (window.confirm("Are you sure you want to delete this invoice?")) {
       try {
-        await api.delete(
-          `https://car-invoicing.vercel.app/invoice/deleteInvoice/${invoiceId}`
-        );
+        await api.delete(`/invoice/deleteInvoice/${invoiceId}`);
         setInvoices((prev) =>
           prev.filter((invoice) => invoice._id !== invoiceId)
         );

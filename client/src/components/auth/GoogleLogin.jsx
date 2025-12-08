@@ -1,13 +1,17 @@
 import React from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../../utils/api";
 
 const LoginGoogle = ({
   clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID,
-  loginEndpoint = "https://car-invoicing.vercel.app/auth/google/token",
-  registerEndpoint = "https://car-invoicing.vercel.app/auth/google/register",
+  loginEndpoint = "/auth/google/token",
+  registerEndpoint = "/auth/google/register",
   onSuccess,
 }) => {
+  const base = API_BASE || "";
+  const loginUrl = loginEndpoint.startsWith("http") ? loginEndpoint : `${base.replace(/\/$/,"")}${loginEndpoint}`;
+  const registerUrl = registerEndpoint.startsWith("http") ? registerEndpoint : `${base.replace(/\/$/,"")}${registerEndpoint}`;
   const navigate = useNavigate();
 
   const handleSuccess = async (response) => {
@@ -15,7 +19,7 @@ const LoginGoogle = ({
       console.log("Google OAuth response received");
 
       // First try to login (existing user)
-      let res = await fetch(loginEndpoint, {
+      let res = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: response.credential }),
@@ -26,7 +30,7 @@ const LoginGoogle = ({
       // If login fails (user not found), try to register
       if (!res.ok && res.status === 404) {
         console.log("User not found, attempting registration...");
-        res = await fetch(registerEndpoint, {
+        res = await fetch(registerUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: response.credential }),

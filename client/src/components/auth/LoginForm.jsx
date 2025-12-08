@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Respect Vite or CRA env vars for backend base URL if present
+const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+
 const LoginForm = ({
-  action = "https://car-invoicing.vercel.app/user/login", // change if your endpoint differs
+  action = "/auth/login", // default to local API route (use full URL in prod if needed)
   onSuccess, // optional callback(userData)
 }) => {
   const [email, setEmail] = useState("");
@@ -20,26 +23,37 @@ const LoginForm = ({
     }
     try {
       setBusy(true);
-      const res = await fetch(action, {
+      const url = action && (action.startsWith("http") || API_BASE === "") ? action : `${API_BASE.replace(/\/$/,"")}${action}`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const text = await res.text();
-      if (!res.ok) {
-        setErr(text || "Login failed");
-        return;
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (err) {
+        // fallback to text
+        const txt = await res.text();
+        try {
+          data = JSON.parse(txt || "{}");
+        } catch (_) {
+          data = { message: txt };
+        }
       }
 
-      const data = JSON.parse(text || "{}");
+      if (!res.ok) {
+        const message = data?.message || data?.error || data?.msg || "Login failed";
+        setErr(message);
+        return;
+      }
       // Adjust the keys below to your API response shape
       if (data.token) localStorage.setItem("token", data.token);
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        if (data.user.id || data.userId) {
-          localStorage.setItem("userId", data.user.id || data.userId);
-        }
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.userId) localStorage.setItem("userId", data.userId);
+      if (data.user && (data.user.id || data.user._id)) {
+        localStorage.setItem("userId", data.user.id || data.user._id);
       }
 
       console.log("Login successful, token stored:", data.token);

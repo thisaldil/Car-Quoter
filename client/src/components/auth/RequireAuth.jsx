@@ -35,7 +35,10 @@ export default function RequireAuth({ children }) {
     // 2) Server check: prove token works on API
     try {
       console.log("Checking token with server...");
-      const res = await fetch("https://car-invoicing.vercel.app/user/me", {
+      const endpoint = "/user/me";
+      const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+      const url = endpoint.startsWith("http") ? endpoint : `${base.replace(/\/$/,"")}${endpoint}`;
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

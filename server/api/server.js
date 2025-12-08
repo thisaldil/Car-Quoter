@@ -9,9 +9,7 @@ app.use(express.json());
 
 // ---- CORS ----
 const allowed = new Set([
-  "https://car-invoicing-client.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173"
 ]);
 
 app.use((req, res, next) => {
@@ -28,8 +26,12 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  // Only set COOP/COEP in production where required. These can break
+  // Google Sign-In and other third-party scripts during local development.
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  }
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();

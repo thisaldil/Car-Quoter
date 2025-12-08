@@ -42,6 +42,7 @@ exports.uploadInvoice = async (req, res) => {
 // save invoice details (with auto calculations)
 exports.saveInvoiceDetails = async (req, res) => {
   const {
+    invoiceId,
     userId,
     pdfUrl,
     template,
@@ -59,42 +60,46 @@ exports.saveInvoiceDetails = async (req, res) => {
   }
 
   try {
-    // Extract values
+    // Extract all values from invoiceDetails
     const {
+      vehicleName,
+      vehicleGrade,
+      details,
+      mileage,
+      year,
+      reportDate,
       vehicleType,
       model,
-      year,
       engineCapacity,
-      declaredValueYen
+      declaredValueYen,
+      priceYen,
+      yenRate = 2,
+      priceLkr,
+      totalCustomsDuty,
+      clearingCharges = 0,
+      totalPriceApprox,
+      customsValue,
+      cidPercent = 30,
+      surchargePercent = 10,
+      xidPercent = 8,
+      luxuryTaxPercent = 15,
+      vatPercent = 18,
+      vetComPercent = 2,
+      cid,
+      surcharge,
+      xid,
+      luxuryTax,
+      vat,
+      vetAndCom,
+      totalDuty,
+      consigneeName,
+      invoiceNo,
+      vehicleImage,
     } = invoiceDetails;
 
-    const yenRate = 2;
-    const cidPercent = 30;
-    const surchargePercent = 10;
-    const xidPercent = 8;
-    const luxuryTaxPercent = 15;
-    const vatPercent = 18;
-    const vetComPercent = 2;
-    const clearingCharges = 125000;
-
-    // Base price in LKR
-    const customsValue = declaredValueYen * yenRate;
-
-    // Calculations
-    const cid = (customsValue * cidPercent) / 100;
-    const surcharge = (cid * surchargePercent) / 100;
-    const xid = (customsValue * xidPercent) / 100;
-    const luxuryTax = (customsValue * luxuryTaxPercent) / 100;
-    const vat = (customsValue * vatPercent) / 100;
-    const vetCom = (customsValue * vetComPercent) / 100;
-
-    const totalDuty =
-      cid + surcharge + xid + luxuryTax + vat + vetCom;
-
-    const totalCost = customsValue + totalDuty + clearingCharges;
-
-    // Save invoice
+    // Save invoice with all details
     const invoice = new Invoice({
+      invoiceId,
       userId,
       pdfUrl,
       invoiceType,
@@ -108,36 +113,44 @@ exports.saveInvoiceDetails = async (req, res) => {
       },
 
       invoiceDetails: {
+        vehicleName,
+        vehicleGrade,
+        details,
+        mileage,
+        year,
+        reportDate,
         vehicleType,
         model,
-        year,
         engineCapacity,
         declaredValueYen,
-
+        priceYen,
         yenRate,
+        priceLkr,
+        totalCustomsDuty,
+        clearingCharges,
+        totalPriceApprox,
         customsValue,
-
         cidPercent,
         surchargePercent,
         xidPercent,
         luxuryTaxPercent,
         vatPercent,
         vetComPercent,
-
         cid,
         surcharge,
         xid,
         luxuryTax,
         vat,
-        vetCom,
-
-        clearingCharges,
+        vetCom: vetAndCom,
+        vetAndCom,
         totalDuty,
-        totalCost,
+        consigneeName,
+        invoiceNo,
+        vehicleImage,
       },
 
       priceDetails: {
-        totalAmount: Number(totalCost),
+        totalAmount: Number(totalPriceApprox || priceDetails?.totalAmount || 0),
         paymentMethod: priceDetails?.paymentMethod || "N/A",
         transactionId: priceDetails?.transactionId || "",
       },

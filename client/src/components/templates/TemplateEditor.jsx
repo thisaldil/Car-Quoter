@@ -445,65 +445,67 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   }`}
                   style={{ minHeight: 400 }}
                 >
-                  {/* Invoice Type Title */}
-                  <div className="flex justify-center mb-6">
-                    <span
-                      className="font-bold text-2xl underline"
-                      style={{ color: accentColor }}
-                    >
-                      {INVOICE_TYPE_LABELS[invoiceData?.invoiceType] ||
-                        invoiceData?.invoiceType ||
-                        "CAR INVOICE"}
-                    </span>
+                 
+
+                  {/* Invoice ID */}
+                  <div className="mb-4 font-mono text-xs bg-blue-50 dark:bg-blue-900 p-3 rounded text-blue-700 dark:text-blue-300">
+                    <span className="font-semibold">Invoice ID:</span> {invoiceData?.invoiceId || "--"}
                   </div>
 
-                  <div className="flex justify-between items-start mb-4">
-                    {/* Invoice ID & Vehicle Info */}
-                    <div className="flex-1">
-                      <div className="mb-2 font-mono text-xs bg-blue-50 dark:bg-blue-900 p-2 rounded text-blue-700 dark:text-blue-300">
-                        <span className="font-semibold">Invoice ID:</span> {invoiceData?.invoiceId || "--"}
-                      </div>
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Vehicle:
-                      </span>
-                      <div>
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">
-                          {invoiceData?.vehicleName || "--"}
+                  {/* Vehicle Info & Image Side by Side */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    {/* Left: Vehicle Details */}
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3" style={{ color: accentColor }}>
+                        Vehicle Information
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Name:</span>
+                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleName || "--"}</p>
                         </div>
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
-                          Grade: {invoiceData?.vehicleGrade || "--"} | Year: {invoiceData?.year || "--"}
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Grade:</span>
+                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleGrade || "--"}</p>
                         </div>
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
-                          Mileage: {invoiceData?.mileage || "--"}
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Year:</span>
+                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.year || "--"}</p>
                         </div>
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Mileage:</span>
+                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.mileage || "--"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Report Date:</span>
+                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.reportDate || "--"}</p>
+                        </div>
+                        {invoiceData?.details && (
+                          <div>
+                            <span className="font-medium text-gray-600 dark:text-gray-400">Details:</span>
+                            <p className="text-gray-900 dark:text-gray-100">{invoiceData.details}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    {/* Date Block */}
-                    <div className="flex flex-col items-end text-sm">
-                      <div className="text-gray-700 dark:text-gray-300 mb-1">
-                        <span className="font-medium">Report Date:</span>{" "}
-                        {invoiceData?.reportDate || "--"}
-                      </div>
+
+                    {/* Right: Vehicle Image */}
+                    <div className="flex flex-col items-center justify-start">
+                      {invoiceData?.vehicleImageUrl ? (
+                        <div>
+                          <img
+                            src={invoiceData.vehicleImageUrl}
+                            alt="Vehicle"
+                            className="max-h-64 max-w-xs rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-48 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400">
+                          No Image
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Details */}
-                  {invoiceData?.details && (
-                    <div className="mb-4 p-3 bg-white dark:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">Details:</span> {invoiceData.details}
-                    </div>
-                  )}
-
-                  {/* Vehicle Image */}
-                  {invoiceData?.vehicleImageUrl && (
-                    <div className="mb-4">
-                      <img
-                        src={invoiceData.vehicleImageUrl}
-                        alt="Vehicle"
-                        className="max-h-32 max-w-xs rounded border border-gray-300 dark:border-gray-600"
-                      />
-                    </div>
-                  )}
 
                   {/* Custom Duty Breakdown Table */}
                   <div className="mb-4">

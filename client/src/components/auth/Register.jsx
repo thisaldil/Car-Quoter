@@ -8,6 +8,15 @@ import toast from "react-hot-toast";
 const Register = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [busyLocal, setBusyLocal] = useState(false);
+  const [errLocal, setErrLocal] = useState("");
+
+  // Support Vite and CRA env var names for backend base URL
+  const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -19,17 +28,16 @@ const Register = () => {
 
   const handleSuccess = async (response) => {
     try {
-      const res = await fetch(
-        "https://car-invoicing.vercel.app/auth/google/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // This is crucial for CORS with your server setup
-          body: JSON.stringify({ token: response.credential }),
-        }
-      );
+      const endpoint = "/auth/google/register";
+      const url = endpoint && (endpoint.startsWith("http") || API_BASE === "") ? endpoint : `${API_BASE.replace(/\/$/,"")}${endpoint}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // do not send credentials by default; token-based flow uses JSON response
+        body: JSON.stringify({ token: response.credential }),
+      });
 
       if (!res.ok) {
         const msg = await res.json().catch(() => ({}));
@@ -41,20 +49,19 @@ const Register = () => {
         return;
       }
 
-      const data = await res.json();
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            name: data.user.name,
-            email: data.user.email,
-            picture: data.user.picture,
-          })
-        );
-        toast.success("Registration successful! Welcome to CarInvoicing Pro!");
-        navigate("/dashboard");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.message || data?.error || "Registration failed";
+        toast.error(msg);
+        return;
       }
+
+      if (data.token) localStorage.setItem("token", data.token);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.userId) localStorage.setItem("userId", data.userId);
+
+      toast.success("Registration successful! Welcome to Car Invoicing Pro!");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Google Registration Error:", error);
       // More specific error handling
@@ -99,7 +106,7 @@ const Register = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-xl leading-relaxed font-medium text-center max-w-lg text-gray-700"
             >
-              Join AirInvoice Pro to manage your invoices with ease. Automate,
+              Join CAR QUOTER to manage your invoices with ease. Automate,
               track, and send invoices effortlessly.
             </motion.p>
           </div>
@@ -120,6 +127,116 @@ const Register = () => {
               size="large"
               text="signup_with"
             />
+            
+              <div className="my-6 border-t pt-6">
+                <h2 className="text-lg font-medium mb-3">Or create account with email</h2>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setErrLocal("");
+                    if (!name || !email || !password) {
+                      setErrLocal("Name, email and password are required");
+                      return;
+                    }
+                    if (password.length < 6) {
+                      setErrLocal("Password must be at least 6 characters");
+                      return;
+                    }
+                    if (password !== confirmPassword) {
+                      setErrLocal("Passwords do not match");
+                      return;
+                    }
+                    try {
+                      setBusyLocal(true);
+                      const endpoint = "/auth/register";
+                      const url = endpoint && (endpoint.startsWith("http") || API_BASE === "") ? endpoint : `${API_BASE.replace(/\/$/,"")}${endpoint}`;
+                      const res = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, email, password }),
+                      });
+                      let data = {};
+                      try {
+                        data = await res.json();
+                      } catch (_) {
+                        const txt = await res.text().catch(() => "");
+                        data = { message: txt };
+                      }
+                      if (!res.ok) {
+                        const msg = data?.message || data?.error || "Registration failed";
+                        setErrLocal(msg);
+                        setBusyLocal(false);
+                        return;
+                      }
+
+                      if (data.token) localStorage.setItem("token", data.token);
+                      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+                      if (data.userId) localStorage.setItem("userId", data.userId);
+
+                      toast.success("Registration successful! Redirecting...");
+                      navigate("/dashboard", { replace: true });
+                    } catch (err) {
+                      console.error("Register error:", err);
+                      setErrLocal("Network error");
+                    } finally {
+                      setBusyLocal(false);
+                    }
+                  }}
+                  className="text-left space-y-3"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Full name</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                      placeholder="Choose a password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Confirm password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                      placeholder="Confirm password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  {errLocal ? <p className="text-sm text-red-600">{errLocal}</p> : null}
+                  <button
+                    type="submit"
+                    disabled={busyLocal}
+                    className="w-full rounded-md bg-orange-600 px-4 py-2 text-white font-medium hover:bg-orange-700"
+                  >
+                    {busyLocal ? "Creating account..." : "Create account"}
+                  </button>
+                </form>
+              </div>
             <div className="mt-6 text-sm text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-orange-500 hover:underline">

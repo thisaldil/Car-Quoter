@@ -61,10 +61,14 @@ const Login = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Login</h1>
 
           {/* Email/Password Login */}
-          <LoginForm
-            action="https://car-invoicing.vercel.app/user/login"
-            onSuccess={handleLoginSuccess}
-          />
+          <LoginForm onSuccess={handleLoginSuccess} />
+
+          <div className="mt-3 text-sm">
+            <span className="text-gray-600">Not registered?</span>{" "}
+            <Link to="/register" className="text-orange-600 hover:underline font-medium">
+              Create an account
+            </Link>
+          </div>
 
           <div className="text-gray-400 text-sm my-4">
             or sign in with Google

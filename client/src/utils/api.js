@@ -1,11 +1,20 @@
 // src/utils/api.js
-export const API_BASE = "https://car-invoicing.vercel.app";
+// Determine backend base URL from env (Vite or CRA)
+export const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+
+export function buildUrl(path) {
+  if (!path) return API_BASE;
+  if (path.startsWith("http")) return path;
+  const base = API_BASE.replace(/\/$/, "");
+  return `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+}
 
 export async function authFetch(path, options = {}) {
+  const url = buildUrl(path);
   const token = localStorage.getItem("token");
   const headers = new Headers(options.headers || {});
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
   return res;
 }
 

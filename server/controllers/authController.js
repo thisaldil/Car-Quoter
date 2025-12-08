@@ -1,5 +1,6 @@
 const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 // keep the same env var name you’re using on the server
@@ -143,9 +144,97 @@ const handleGoogleRegister = async (req, res) => {
   }
 };
 
+// Local (email/password) registration
+const handleLocalRegister = async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing && existing.passwordHash) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    let user;
+    if (existing && existing.googleId && !existing.passwordHash) {
+      // user registered via Google earlier, enable local auth as well
+      existing.passwordHash = hash;
+      existing.authProvider = "both";
+      await existing.save();
+      user = existing;
+    } else if (existing) {
+      // existing without passwordHash (should have been handled above), but fallback
+      existing.passwordHash = hash;
+      existing.authProvider = existing.authProvider === "google" ? "both" : "local";
+      await existing.save();
+      user = existing;
+    } else {
+      user = new User({ name, email, passwordHash: hash, authProvider: "local" });
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    await User.findByIdAndUpdate(user._id, { token });
+
+    return res.status(200).json({
+      message: "Registration successful",
+      user: { id: user._id, name: user.name, email: user.email },
+      token,
+      userId: user._id,
+    });
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ message: "User already exists" });
+    console.error("Local Register Error:", error?.message || error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Local (email/password) login
+const handleLocalLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (!user.passwordHash) {
+      return res.status(400).json({ message: "Local login not available for this account" });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    await User.findByIdAndUpdate(user._id, { token });
+
+    return res.status(200).json({
+      message: "Authentication successful",
+      user: { id: user._id, name: user.name, email: user.email },
+      token,
+      userId: user._id,
+    });
+  } catch (error) {
+    console.error("Local Login Error:", error?.message || error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   handleGoogleRedirect,
   handleGoogleToken,
   handleGoogleRegister,
+  handleLocalRegister,
+  handleLocalLogin,
   createUser,
 };

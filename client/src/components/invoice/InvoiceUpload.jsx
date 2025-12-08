@@ -63,13 +63,12 @@ function InvoiceUpload({ onUpload }) {
       const formData = new FormData();
       formData.append("ticket", file);
 
-      const response = await axios.post(
-        "https://car-invoicing.vercel.app/ocr/analyze",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+      const url = `/ocr/analyze`;
+      const fullUrl = url.startsWith("http") ? url : `${base.replace(/\/$/,"")}${url}`;
+      const response = await axios.post(fullUrl, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       if (response.data) {
         onUpload(response.data);

@@ -38,7 +38,7 @@ function Dashboard({ setGeneratedInvoice }) {
     const fetchInvoices = async () => {
       try {
         const res = await api.get(
-          `https://car-invoicing.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
+          `/invoice/getInvoiceDetailsByUserId/${userId}`
         );
 
         const allInvoices = res.data.map((inv) => ({
