@@ -1,12 +1,5 @@
 import React from "react";
 
-const INVOICE_TYPE_LABELS = {
-  type1: "PERFORMA INVOICE",
-  type2: "COMMERCIAL INVOICE",
-  type3: "INVOICE",
-  type4: "CASH RECEIPT",
-};
-
 function toNum(x) {
   const n = typeof x === "string" ? Number(x.replace(/,/g, "")) : Number(x);
   return Number.isFinite(n) ? n : 0;

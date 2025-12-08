@@ -255,6 +255,8 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             luxuryTaxPercent: 15,
             vatPercent: 18,
             vetComPercent: 2,
+            // Ensure invoiceNo is stored with invoiceDetails and mirrors invoiceId
+            invoiceNo: invoiceData.invoiceId || invoiceData.invoiceNo || "",
             vehicleImage: invoiceData.vehicleImageUrl || "",
           },
           priceDetails: {
