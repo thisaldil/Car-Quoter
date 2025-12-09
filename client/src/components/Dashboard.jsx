@@ -78,13 +78,12 @@ function Dashboard({ setGeneratedInvoice }) {
         });
 
         const currentRevenue = currentMonthInvoices.reduce(
-          (sum, inv) =>
-            sum + (parseFloat(inv.invoiceDetails?.items?.[0]?.cif) || 0),
+          (sum, inv) => sum + (parseFloat(inv.priceDetails?.totalAmount) || 0),
           0
         );
 
         const previousRevenue = lastMonthInvoicesFiltered.reduce(
-          (sum, inv) => sum + parseFloat(inv.priceDetails?.totalAmount || 0),
+          (sum, inv) => sum + (parseFloat(inv.priceDetails?.totalAmount) || 0),
           0
         );
 
@@ -279,16 +278,10 @@ function Dashboard({ setGeneratedInvoice }) {
                   Invoice No
                 </th>
                 <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
-                  Type
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
-                  Consingee
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
                   Date
                 </th>
                 <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
-                  Amount
+                  Total Amount
                 </th>
                 <th className="py-3 px-4 text-right text-sm font-medium text-gray-500 dark:text-white">
                   Actions
@@ -304,17 +297,16 @@ function Dashboard({ setGeneratedInvoice }) {
                   <td className="py-4 px-4 text-sm text-gray-800 dark:text-white">
                     {invoice.invoiceDetails?.invoiceNo || "N/A"}
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-800 dark:text-white">
-                    {invoice.invoiceType || "Invoice"}
-                  </td>
-                  <td className="py-4 px-4 text-sm text-gray-800 dark:text-white">
-                    {invoice.invoiceDetails?.consigneeName || "N/A"}
-                  </td>
                   <td className="py-4 px-4 text-sm text-gray-600 dark:text-white">
                     {invoice.date}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-800 font-medium dark:text-white">
-                    {invoice.invoiceDetails?.items?.[0]?.cif || "-"}
+                    {invoice.priceDetails?.totalAmount
+                      ? `$${invoice.priceDetails.totalAmount.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`
+                      : "-"}
                   </td>
 
                   <td className="py-4 px-4 text-right">

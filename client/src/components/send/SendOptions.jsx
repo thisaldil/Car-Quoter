@@ -77,7 +77,7 @@ function SendOptions({ invoice, onBack }) {
       }
       if (sendMethod === "whatsapp") {
         // Get company name from template or use default
-        const companyName = templateData?.company?.name || "Our Company";
+        const companyName = templateData?.company?.name || "Car Quoter Ltd";
         
         const message = `Dear Customer,\n\nThis is ${companyName}. Please find your invoice below:\n\n${invoiceData?.pdfUrl}\n\nThank you for your business.`;
         const sanitizedPhone = `${selectedCode}${phone.replace(/\D/g, "")}`;
