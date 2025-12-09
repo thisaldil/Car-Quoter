@@ -71,9 +71,12 @@ export default function InvoicePreview({ invoiceData, templateData }) {
         className="p-8 md:p-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600"
         style={{ minHeight: 400 }}
       >
-        {/* Invoice ID */}
-        <div className="mb-4 font-mono text-xs bg-blue-50 dark:bg-blue-900 p-3 rounded text-blue-700 dark:text-blue-300">
-          <span className="font-semibold">Invoice ID:</span> {invoiceData?.invoiceId || "--"}
+        {/* Invoice ID and Invoice No */}
+        <div className="mb-4 space-y-2">
+         
+          <div className="font-mono text-xs bg-green-50 dark:bg-green-900 p-3 rounded text-green-700 dark:text-green-300">
+            <span className="font-semibold">Invoice No:</span> {invoiceData?.invoiceNo || "--"}
+          </div>
         </div>
 
         {/* Vehicle Info & Image Side by Side */}
@@ -115,10 +118,10 @@ export default function InvoicePreview({ invoiceData, templateData }) {
 
           {/* Right: Vehicle Image */}
           <div className="flex flex-col items-center justify-start">
-            {invoiceData?.vehicleImageUrl ? (
+            {invoiceData?.vehicleImage ? (
               <div>
                 <img
-                  src={invoiceData.vehicleImageUrl}
+                  src={invoiceData.vehicleImage}
                   alt="Vehicle"
                   className="max-h-64 max-w-xs rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md object-cover"
                 />

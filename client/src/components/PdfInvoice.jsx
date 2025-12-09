@@ -62,6 +62,11 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
               <Text style={styles.badgeText}>Invoice ID: {safe(invoiceData.invoiceId)}</Text>
             </View>
 
+            {/* Invoice No Badge */}
+            <View style={styles.badgeRow}>
+              <Text style={[styles.badgeText, { backgroundColor: "#f0fdf4", color: "#166534" }]}>Invoice No: {safe(invoiceData.invoiceNo)}</Text>
+            </View>
+
             {/* Vehicle Info & Image Side-by-Side */}
             <View style={styles.vehicleSection}>
               <View style={styles.colLeft}>
@@ -95,8 +100,8 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
               </View>
 
               <View style={styles.colRight}>
-                {(invoiceData.vehicleImage || invoiceData.vehicleImageUrl) ? (
-                  <Image src={invoiceData.vehicleImage || invoiceData.vehicleImageUrl} style={styles.vehicleImage} />
+                {invoiceData?.vehicleImage ? (
+                  <Image src={invoiceData.vehicleImage} style={styles.vehicleImage} />
                 ) : (
                   <View style={styles.imagePlaceholder}>
                     <Text style={styles.placeholderText}>No Image</Text>

@@ -17,12 +17,7 @@ import PdfInvoice from "../PdfInvoice";
 import toast from "react-hot-toast";
 import { ImageIcon } from "lucide-react";
 
-const INVOICE_TYPE_LABELS = {
-  type1: "PERFORMA INVOICE",
-  type2: "COMMERCIAL INVOICE",
-  type3: "INVOICE",
-  type4: "CASH RECEIPT",
-};
+
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
   if (typeof window !== "undefined" && !window.Buffer) {
