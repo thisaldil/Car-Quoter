@@ -239,6 +239,9 @@ export default function CarInvoiceForm({ onSave }) {
     vehicleGrade: "",
     details: "",
     mileage: "",
+    vehicleType: "",
+    fuelType: "",
+    engineCC: "",
     year: "",
 
     // Date
@@ -293,25 +296,43 @@ export default function CarInvoiceForm({ onSave }) {
     }
   };
 
-  // Auto-calculate duty values
+  // Auto-calculate duty values - Sri Lanka vehicle import tax structure
   const calculateDuties = (baseValue) => {
-    const customsValue = baseValue * invoiceData.yenRate;
-    const calculatedCid = (customsValue * 30) / 100;
-    const calculatedSurcharge = (calculatedCid * 10) / 100;
-    const calculatedXid = (customsValue * 8) / 100;
-    const calculatedLuxuryTax = (customsValue * 15) / 100;
-    const calculatedVat = (customsValue * 18) / 100;
-    const calculatedVetAndCom = (customsValue * 2) / 100;
+    // Tax Base (CIF value converted to LKR)
+    const cifValue = baseValue * invoiceData.yenRate;
 
+    // CID = 20% of Tax Base
+    const calculatedCid = (cifValue * 20) / 100;
+
+    // SUR (Surcharge) = 50% of CID
+    const calculatedSurcharge = (calculatedCid * 50) / 100;
+
+    // XID (Excise Duty) = engineCC × 3450
+    const engineCC = parseFloat(invoiceData.engineCC) || 0;
+    const calculatedXid = engineCC * 3450;
+
+    // VAT Base = CIF + CID + SUR + XID
+    const vatBase = cifValue + calculatedCid + calculatedSurcharge + calculatedXid;
+
+    // VAT = 18% of VAT Base
+    const calculatedVat = (vatBase * 18) / 100;
+
+    // VEL (Vehicle Entitlement Levy) = Fixed 15000 LKR
+    const vehicleEntitlementLevy = 15000;
+
+    // COM/EXM/SEL = Fixed 1750 LKR
+    const comExmSel = 1750;
+
+    // Total Duty = CID + SUR + XID + VAT + VEL + COM/EXM/SEL
     const calculatedTotalDuty =
       calculatedCid +
       calculatedSurcharge +
       calculatedXid +
-      calculatedLuxuryTax +
       calculatedVat +
-      calculatedVetAndCom;
+      vehicleEntitlementLevy +
+      comExmSel;
 
-    const calculatedPriceLkr = customsValue;
+    const calculatedPriceLkr = cifValue;
     const calculatedTotalCustomsDuty = calculatedTotalDuty;
     const calculatedTotalPrice =
       calculatedPriceLkr +
@@ -322,9 +343,9 @@ export default function CarInvoiceForm({ onSave }) {
       cid: calculatedCid,
       surcharge: calculatedSurcharge,
       xid: calculatedXid,
-      luxuryTax: calculatedLuxuryTax,
+      luxuryTax: vehicleEntitlementLevy,
       vat: calculatedVat,
-      vetAndCom: calculatedVetAndCom,
+      vetAndCom: comExmSel,
       totalDuty: calculatedTotalDuty,
       priceLkr: calculatedPriceLkr,
       totalCustomsDuty: calculatedTotalCustomsDuty,
@@ -504,6 +525,22 @@ export default function CarInvoiceForm({ onSave }) {
                     placeholder="Enter vehicle grade"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Type
+                  </label>
+                  <select
+                    name="vehicleType"
+                    value={invoiceData.vehicleType}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select Type --</option>
+                    <option value="Car/Suv">Car/Suv</option>
+                    <option value="Pickup">Pickup</option>
+                  
+                  </select>
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
                     Details
@@ -541,6 +578,37 @@ export default function CarInvoiceForm({ onSave }) {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., 2020"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Fuel Type
+                  </label>
+                  <select
+                    name="fuelType"
+                    value={invoiceData.fuelType}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select Fuel --</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Petrol Hybrid">Petrol Hybrid</option>
+                    <option value="Diesel Hybrid">Diesel Hybrid</option>
+                    <option value="Electric">Electric</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Engine CC
+                  </label>
+                  <input
+                    type="number"
+                    name="engineCC"
+                    value={invoiceData.engineCC}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 1500"
                   />
                 </div>
               </div>
