@@ -8,12 +8,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-const INVOICE_TYPE_LABELS = {
-  type1: "PERFORMA INVOICE",
-  type2: "COMMERCIAL INVOICE",
-  type3: "INVOICE",
-  type4: "CASH RECEIPT",
-};
+
 
 const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
   const design = templateData.design || {};
@@ -32,10 +27,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
       year: "numeric",
     });
 
-  const invoiceTypeLabel =
-    INVOICE_TYPE_LABELS[invoiceData?.invoiceType] ||
-    invoiceData?.invoiceType ||
-    "INVOICE";
+  
 
   const items = Array.isArray(invoiceData.items) ? invoiceData.items : [];
   const totalCIF = items.reduce((sum, r) => sum + toNum(r?.cif), 0);
@@ -56,15 +48,11 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
             {/* Invoice Header */}
             <View style={styles.invoiceHeader}>
               <View style={styles.invoiceHeaderLeft}>
-                <Text style={styles.invoiceTitle}>{invoiceTypeLabel}</Text>
                 <View style={styles.invoiceMetaRow}>
                   <Text style={styles.metaLabel}>Invoice ID:</Text>
                   <Text style={styles.metaValue}>{safe(invoiceData.invoiceId)}</Text>
                 </View>
-                <View style={styles.invoiceMetaRow}>
-                  <Text style={styles.metaLabel}>Invoice No:</Text>
-                  <Text style={styles.metaValue}>{safe(invoiceData.invoiceNo)}</Text>
-                </View>
+               
                 <View style={styles.invoiceMetaRow}>
                   <Text style={styles.metaLabel}>Date:</Text>
                   <Text style={styles.metaValue}>{displayDate}</Text>
@@ -95,6 +83,18 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Mileage:</Text>
                     <Text style={styles.detailValue}>{safe(invoiceData.mileage) || "--"}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Vehicle Type:</Text>
+                    <Text style={styles.detailValue}>{safe(invoiceData.vehicleType) || "--"}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Fuel Type:</Text>
+                    <Text style={styles.detailValue}>{safe(invoiceData.fuelType) || "--"}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Engine CC:</Text>
+                    <Text style={styles.detailValue}>{safe(invoiceData.engineCC) || "--"}</Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Report Date:</Text>
@@ -133,7 +133,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>CID (30%)</Text>
+                    <Text style={styles.tableCellText}>CID (20%)</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
                     <Text style={styles.tableCellText}>{fmt(invoiceData.cid)}</Text>
@@ -141,7 +141,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>Surcharge (10%)</Text>
+                    <Text style={styles.tableCellText}>Surcharge (50% of CID)</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
                     <Text style={styles.tableCellText}>{fmt(invoiceData.surcharge)}</Text>
@@ -149,7 +149,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>XID (8%)</Text>
+                    <Text style={styles.tableCellText}>XID (CC × 3450)</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
                     <Text style={styles.tableCellText}>{fmt(invoiceData.xid)}</Text>
@@ -157,7 +157,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>Luxury Tax (15%)</Text>
+                    <Text style={styles.tableCellText}>VEL (15,000 LKR)</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
                     <Text style={styles.tableCellText}>{fmt(invoiceData.luxuryTax)}</Text>
@@ -173,7 +173,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>Vet & Com (2%)</Text>
+                    <Text style={styles.tableCellText}>COM/EXM/SEL (1,750 LKR)</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
                     <Text style={styles.tableCellText}>{fmt(invoiceData.vetAndCom)}</Text>
@@ -204,18 +204,18 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>Price (¥)</Text>
+                    <Text style={styles.tableCellText}>Price ({invoiceData.currency || "JPY"})</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.priceYen)}</Text>
+                    <Text style={styles.tableCellText}>{fmt(invoiceData.priceValue || invoiceData.priceYen)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
                   <View style={styles.tableCell}>
-                    <Text style={styles.tableCellText}>Yen Rate</Text>
+                    <Text style={styles.tableCellText}>{invoiceData.currency || "JPY"} to LKR Rate</Text>
                   </View>
                   <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{safe(invoiceData.yenRate?.toFixed?.(2) || "2.00")}</Text>
+                    <Text style={styles.tableCellText}>{safe((invoiceData.currencyRate || invoiceData.yenRate)?.toFixed?.(2) || "2.00")}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>

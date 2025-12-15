@@ -257,8 +257,9 @@ export default function CarInvoiceForm({ onSave }) {
     totalDuty: 0,
 
     // Price Section
-    priceYen: 0,
-    yenRate: 2,
+    currency: "JPY",
+    priceValue: 0,
+    currencyRate: 2,
     priceLkr: 0,
     totalCustomsDuty: 0,
     clearingCharges: 125000,
@@ -299,7 +300,7 @@ export default function CarInvoiceForm({ onSave }) {
   // Auto-calculate duty values - Sri Lanka vehicle import tax structure
   const calculateDuties = (baseValue) => {
     // Tax Base (CIF value converted to LKR)
-    const cifValue = baseValue * invoiceData.yenRate;
+    const cifValue = baseValue * invoiceData.currencyRate;
 
     // CID = 20% of Tax Base
     const calculatedCid = (cifValue * 20) / 100;
@@ -311,17 +312,17 @@ export default function CarInvoiceForm({ onSave }) {
     const engineCC = parseFloat(invoiceData.engineCC) || 0;
     const calculatedXid = engineCC * 3450;
 
-    // VAT Base = CIF + CID + SUR + XID
-    const vatBase = cifValue + calculatedCid + calculatedSurcharge + calculatedXid;
-
-    // VAT = 18% of VAT Base
-    const calculatedVat = (vatBase * 18) / 100;
-
     // VEL (Vehicle Entitlement Levy) = Fixed 15000 LKR
     const vehicleEntitlementLevy = 15000;
 
     // COM/EXM/SEL = Fixed 1750 LKR
     const comExmSel = 1750;
+
+    // VAT Base = CIF + CID + SUR + XID + VEL + COM/EXM/SEL
+    const vatBase = cifValue + calculatedCid + calculatedSurcharge + calculatedXid + vehicleEntitlementLevy + comExmSel;
+
+    // VAT = 18% of VAT Base
+    const calculatedVat = (vatBase * 18) / 100;
 
     // Total Duty = CID + SUR + XID + VAT + VEL + COM/EXM/SEL
     const calculatedTotalDuty =
@@ -353,22 +354,22 @@ export default function CarInvoiceForm({ onSave }) {
     };
   };
 
-  const handlePriceYenChange = (e) => {
+  const handlePriceValueChange = (e) => {
     const value = parseFloat(e.target.value) || 0;
     const calculated = calculateDuties(value);
     setInvoiceData((prev) => ({
       ...prev,
-      priceYen: value,
+      priceValue: value,
       ...calculated,
     }));
   };
 
-  const handleYenRateChange = (e) => {
+  const handleCurrencyRateChange = (e) => {
     const value = parseFloat(e.target.value) || 2;
-    const calculated = calculateDuties(invoiceData.priceYen);
+    const calculated = calculateDuties(invoiceData.priceValue);
     setInvoiceData((prev) => ({
       ...prev,
-      yenRate: value,
+      currencyRate: value,
       ...calculated,
     }));
   };
@@ -642,28 +643,28 @@ export default function CarInvoiceForm({ onSave }) {
                 </h2>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-gray-700">CID (30%):</span>
+                    <span className="font-semibold text-gray-700">CID (20%):</span>
                     <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
                       {invoiceData.cid.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="font-semibold text-gray-700">
-                      Surcharge (10%):
+                      Surcharge (50% of CID):
                     </span>
                     <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
                       {invoiceData.surcharge.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-gray-700">XID (8%):</span>
+                    <span className="font-semibold text-gray-700">XID (CC × 3450):</span>
                     <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
                       {invoiceData.xid.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="font-semibold text-gray-700">
-                      Luxury Tax (15%):
+                      VEL (15,000 LKR):
                     </span>
                     <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
                       {invoiceData.luxuryTax.toFixed(2)}
@@ -677,7 +678,7 @@ export default function CarInvoiceForm({ onSave }) {
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="font-semibold text-gray-700">
-                      Vet & Com (2%):
+                      COM/EXM/SEL (1,750 LKR):
                     </span>
                     <span className="bg-gray-100 px-3 py-1 rounded text-gray-800">
                       {invoiceData.vetAndCom.toFixed(2)}
@@ -702,26 +703,42 @@ export default function CarInvoiceForm({ onSave }) {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Price (¥)
+                    Currency
+                  </label>
+                  <select
+                    name="currency"
+                    value={invoiceData.currency}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="LKR">LKR (Rs)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Price ({invoiceData.currency})
                   </label>
                   <input
                     type="number"
-                    name="priceYen"
-                    value={invoiceData.priceYen}
-                    onChange={handlePriceYenChange}
+                    name="priceValue"
+                    value={invoiceData.priceValue}
+                    onChange={handlePriceValueChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="0"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Yen Rate
+                    {invoiceData.currency} to LKR Rate
                   </label>
                   <input
                     type="number"
-                    name="yenRate"
-                    value={invoiceData.yenRate}
-                    onChange={handleYenRateChange}
+                    name="currencyRate"
+                    value={invoiceData.currencyRate}
+                    onChange={handleCurrencyRateChange}
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="2"

@@ -224,12 +224,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             vehicleGrade: invoiceData.vehicleGrade || "",
             details: invoiceData.details || "",
             mileage: invoiceData.mileage || "",
+            fuelType: invoiceData.fuelType || "",
             year: invoiceData.year || "",
             reportDate: invoiceData.reportDate || "",
             vehicleType: invoiceData.vehicleType || "",
             model: invoiceData.model || "",
             engineCapacity: invoiceData.engineCapacity || "",
-            declaredValueYen: invoiceData.priceYen || 0,
+            engineCC: invoiceData.engineCC || 0,
+            currency: invoiceData.currency || "JPY",
+            priceValue: invoiceData.priceValue || 0,
+            currencyRate: invoiceData.currencyRate || 2,
+            declaredValueYen: invoiceData.priceValue || invoiceData.priceYen || 0,
             cid: invoiceData.cid || 0,
             surcharge: invoiceData.surcharge || 0,
             xid: invoiceData.xid || 0,
@@ -237,19 +242,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             vat: invoiceData.vat || 0,
             vetCom: invoiceData.vetAndCom || 0,
             totalDuty: invoiceData.totalDuty || 0,
-            priceYen: invoiceData.priceYen || 0,
-            yenRate: invoiceData.yenRate || 2,
+            priceYen: invoiceData.priceValue || invoiceData.priceYen || 0,
+            yenRate: invoiceData.currencyRate || invoiceData.yenRate || 2,
             priceLkr: invoiceData.priceLkr || 0,
             totalCustomsDuty: invoiceData.totalCustomsDuty || 0,
             clearingCharges: invoiceData.clearingCharges || 0,
             totalPriceApprox: invoiceData.totalPriceApprox || 0,
             customsValue: invoiceData.priceLkr || 0,
-            cidPercent: 30,
-            surchargePercent: 10,
-            xidPercent: 8,
-            luxuryTaxPercent: 15,
+            cidPercent: 20,
+            surchargePercent: 50,
+            xidPercent: 0,
+            luxuryTaxPercent: 0,
             vatPercent: 18,
-            vetComPercent: 2,
+            vetComPercent: 0,
             // Ensure invoiceNo is stored with invoiceDetails and mirrors invoiceId
             invoiceNo: invoiceData.invoiceId || invoiceData.invoiceNo || "",
             vehicleImage: invoiceData.vehicleImageUrl || "",
@@ -562,15 +567,15 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
                       <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Price (¥)</div>
+                        <div className="text-gray-600 dark:text-gray-400">Price ({invoiceData?.currency || "JPY"})</div>
                         <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.priceYen)}
+                          {fmt(invoiceData?.priceValue || invoiceData?.priceYen)}
                         </div>
                       </div>
                       <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Yen Rate</div>
+                        <div className="text-gray-600 dark:text-gray-400">{invoiceData?.currency || "JPY"} to LKR Rate</div>
                         <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {invoiceData?.yenRate?.toFixed(2) || "2.00"}
+                          {(invoiceData?.currencyRate || invoiceData?.yenRate)?.toFixed(2) || "2.00"}
                         </div>
                       </div>
                       <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">

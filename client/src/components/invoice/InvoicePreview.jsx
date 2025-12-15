@@ -104,6 +104,18 @@ export default function InvoicePreview({ invoiceData, templateData }) {
                 <p className="text-gray-900 dark:text-gray-100">{invoiceData?.mileage || "--"}</p>
               </div>
               <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Vehicle Type:</span>
+                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleType || "--"}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Fuel Type:</span>
+                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.fuelType || "--"}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Engine CC:</span>
+                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.engineCC || "--"}</p>
+              </div>
+              <div>
                 <span className="font-medium text-gray-600 dark:text-gray-400">Report Date:</span>
                 <p className="text-gray-900 dark:text-gray-100">{invoiceData?.reportDate || "--"}</p>
               </div>
@@ -141,25 +153,25 @@ export default function InvoicePreview({ invoiceData, templateData }) {
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">CID (30%)</div>
+              <div className="text-gray-600 dark:text-gray-400">CID (20%)</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {fmt(invoiceData?.cid)}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Surcharge (10%)</div>
+              <div className="text-gray-600 dark:text-gray-400">Surcharge (50% of CID)</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {fmt(invoiceData?.surcharge)}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">XID (8%)</div>
+              <div className="text-gray-600 dark:text-gray-400">XID (CC × 3450)</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {fmt(invoiceData?.xid)}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Luxury Tax (15%)</div>
+              <div className="text-gray-600 dark:text-gray-400">VEL (15,000 LKR)</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {fmt(invoiceData?.luxuryTax)}
               </div>
@@ -171,7 +183,7 @@ export default function InvoicePreview({ invoiceData, templateData }) {
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Vet & Com (2%)</div>
+              <div className="text-gray-600 dark:text-gray-400">COM/EXM/SEL (1,750 LKR)</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
                 {fmt(invoiceData?.vetAndCom)}
               </div>
@@ -192,15 +204,15 @@ export default function InvoicePreview({ invoiceData, templateData }) {
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Price (¥)</div>
+              <div className="text-gray-600 dark:text-gray-400">Price ({invoiceData?.currency || 'JPY'})</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.priceYen)}
+                {fmt(invoiceData?.priceValue || invoiceData?.priceYen)}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Yen Rate</div>
+              <div className="text-gray-600 dark:text-gray-400">{invoiceData?.currency || 'JPY'} to LKR Rate</div>
               <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {invoiceData?.yenRate?.toFixed(2) || "2.00"}
+                {(invoiceData?.currencyRate || invoiceData?.yenRate)?.toFixed(2) || "2.00"}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
