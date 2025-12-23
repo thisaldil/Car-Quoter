@@ -298,9 +298,9 @@ export default function CarInvoiceForm({ onSave }) {
   };
 
   // Auto-calculate duty values - Sri Lanka vehicle import tax structure
-  const calculateDuties = (baseValue) => {
+  const calculateDuties = (baseValue, currencyRate = invoiceData.currencyRate) => {
     // Tax Base (CIF value converted to LKR)
-    const cifValue = baseValue * invoiceData.currencyRate;
+    const cifValue = baseValue * currencyRate;
 
     // CID = 20% of Tax Base
     const calculatedCid = (cifValue * 20) / 100;
@@ -356,7 +356,7 @@ export default function CarInvoiceForm({ onSave }) {
 
   const handlePriceValueChange = (e) => {
     const value = parseFloat(e.target.value) || 0;
-    const calculated = calculateDuties(value);
+    const calculated = calculateDuties(value, invoiceData.currencyRate);
     setInvoiceData((prev) => ({
       ...prev,
       priceValue: value,
@@ -366,7 +366,7 @@ export default function CarInvoiceForm({ onSave }) {
 
   const handleCurrencyRateChange = (e) => {
     const value = parseFloat(e.target.value) || 2;
-    const calculated = calculateDuties(invoiceData.priceValue);
+    const calculated = calculateDuties(invoiceData.priceValue, value);
     setInvoiceData((prev) => ({
       ...prev,
       currencyRate: value,
@@ -697,9 +697,17 @@ export default function CarInvoiceForm({ onSave }) {
 
             {/* Table 3: Price Section (Full Width) */}
             <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-700 mb-4 border-b-2 border-purple-500 pb-2">
-                Price Section
-              </h2>
+              <div className="flex items-start justify-between mb-4 border-b-2 border-purple-500 pb-2">
+                <h2 className="text-xl font-bold text-gray-700">
+                  Price Section
+                </h2>
+                <div className="text-xs text-red-600 text-right leading-snug">
+                  <div className="font-semibold">Selection order:</div>
+                  <div>1) Select currency</div>
+                  <div>2) Rate</div>
+                  <div>3) Price</div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -719,19 +727,6 @@ export default function CarInvoiceForm({ onSave }) {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Price ({invoiceData.currency})
-                  </label>
-                  <input
-                    type="number"
-                    name="priceValue"
-                    value={invoiceData.priceValue}
-                    onChange={handlePriceValueChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
                     {invoiceData.currency} to LKR Rate
                   </label>
                   <input
@@ -742,6 +737,19 @@ export default function CarInvoiceForm({ onSave }) {
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Price ({invoiceData.currency})
+                  </label>
+                  <input
+                    type="number"
+                    name="priceValue"
+                    value={invoiceData.priceValue}
+                    onChange={handlePriceValueChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="0"
                   />
                 </div>
                 <div>

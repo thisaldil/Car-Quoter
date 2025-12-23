@@ -118,15 +118,15 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                     </View>
                   </View>
                 </View>
-
-                {/* Detail Section */}
-                <View style={styles.detailBlock}>
-                  <Text style={styles.blockTitle}>DETAILS</Text>
-                  <Text style={styles.detailText}>
-                    {safe(invoiceData.details) || "No details provided."}
-                  </Text>
-                </View>
               </View>
+            </View>
+
+            {/* Details Section (Full Width) */}
+            <View style={styles.detailBlock}>
+              <Text style={styles.blockTitle}>DETAILS</Text>
+              <Text style={styles.detailText}>
+                {safe(invoiceData.details) || "No details provided."}
+              </Text>
             </View>
           </View>
 
@@ -413,10 +413,11 @@ const styles = StyleSheet.create({
 
   // Detail Block
   detailBlock: {
-    backgroundColor: "#f9fafb",
+    marginTop: 10,
+    backgroundColor: "#ffffff",
     padding: 8,
     borderRadius: 4,
-    border: "1px solid #e5e7eb",
+    border: "1px solid #d1d5db",
   },
   detailText: {
     fontSize: 8,
