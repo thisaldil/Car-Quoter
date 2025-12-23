@@ -186,6 +186,8 @@ function SendOptions({ invoice, onBack }) {
 
     return {
       ...invoiceData.invoiceDetails,
+      // Needed because InvoicePreview expects invoiceId at top-level
+      invoiceId: invoiceData?.invoiceId || invoiceData?.invoiceDetails?.invoiceNo || "--",
       invoiceType: invoiceData.invoiceType || "type1",
       date: invoiceData.invoiceDetails.date || new Date().toLocaleDateString("en-GB"),
       items: invoiceData.invoiceDetails.items || [],

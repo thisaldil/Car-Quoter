@@ -27,6 +27,22 @@ export default function InvoicePreview({ invoiceData, templateData, contentOnly 
   const termsText = design.termsText || "";
   const bottomLayerUrl = design.bottomLayerUrl || null;
 
+  const invoiceIdDisplay =
+    invoiceData?.invoiceId ||
+    invoiceData?.invoiceNo ||
+    invoiceData?.invoiceDetails?.invoiceNo ||
+    "--";
+  const fuelTypeDisplay =
+    invoiceData?.fuelType ||
+    invoiceData?.invoiceDetails?.fuelType ||
+    "--";
+  const engineCCDisplay =
+    invoiceData?.engineCC ||
+    invoiceData?.engineCapacity ||
+    invoiceData?.invoiceDetails?.engineCC ||
+    invoiceData?.invoiceDetails?.engineCapacity ||
+    "--";
+
   const [vehicleObjectUrl, setVehicleObjectUrl] = useState("");
 
   const resolvedVehicleImageSrc = useMemo(() => {
@@ -87,7 +103,7 @@ export default function InvoicePreview({ invoiceData, templateData, contentOnly 
           <div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Invoice ID</div>
             <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              {invoiceData?.invoiceId || "--"}
+              {invoiceIdDisplay}
             </div>
           </div>
           <div className="text-right">
@@ -118,8 +134,6 @@ export default function InvoicePreview({ invoiceData, templateData, contentOnly 
               </div>
             )}
           </div>
-
-          {/* Right: Vehicle Information */}
           <div className="w-[65%]">
             <div className="text-sm font-semibold mb-2" style={{ color: accentColor }}>
               VEHICLE INFORMATION
@@ -132,8 +146,8 @@ export default function InvoicePreview({ invoiceData, templateData, contentOnly 
                 { label: "Year:", value: invoiceData?.year },
                 { label: "Mileage:", value: invoiceData?.mileage },
                 { label: "Vehicle Type:", value: invoiceData?.vehicleType },
-                { label: "Fuel Type:", value: invoiceData?.fuelType },
-                { label: "Engine CC:", value: invoiceData?.engineCC },
+                { label: "Fuel Type:", value: fuelTypeDisplay },
+                { label: "Engine CC:", value: engineCCDisplay },
                 { label: "Report Date:", value: invoiceData?.reportDate },
               ].map((row) => (
                 <div key={row.label} className="flex">

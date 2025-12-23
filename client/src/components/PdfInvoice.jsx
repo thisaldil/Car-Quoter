@@ -288,6 +288,10 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
   const termsText = (invoiceData.termsText ?? design.termsText) || "";
   const bottomLayerUrl = design.bottomLayerUrl || null;
 
+  const invoiceIdDisplay = invoiceData?.invoiceId || invoiceData?.invoiceNo || "";
+  const fuelTypeDisplay = invoiceData?.fuelType || "";
+  const engineCCDisplay = invoiceData?.engineCC || invoiceData?.engineCapacity || "";
+
   const [vehicleImageSrc, setVehicleImageSrc] = useState("");
 
   const resolvedVehicleImageSrc = useMemo(() => {
@@ -348,7 +352,7 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
           <View style={styles.invoiceHeader}>
             <View style={styles.invoiceId}>
               <Text style={styles.label}>Invoice ID</Text>
-              <Text style={styles.value}>{safe(invoiceData.invoiceId) || "--"}</Text>
+              <Text style={styles.value}>{safe(invoiceIdDisplay) || "--"}</Text>
             </View>
             <View style={styles.dateSection}>
               <Text style={[styles.label, styles.textRight]}>Date</Text>
@@ -405,11 +409,11 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                     </View>
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Fuel Type:</Text>
-                      <Text style={styles.infoValue}>{safe(invoiceData.fuelType) || "--"}</Text>
+                      <Text style={styles.infoValue}>{safe(fuelTypeDisplay) || "--"}</Text>
                     </View>
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Engine CC:</Text>
-                      <Text style={styles.infoValue}>{safe(invoiceData.engineCC) || "--"}</Text>
+                      <Text style={styles.infoValue}>{safe(engineCCDisplay) || "--"}</Text>
                     </View>
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Report Date:</Text>
@@ -510,6 +514,14 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
                   </View>
                   <View style={styles.tableColAmount}>
                     <Text style={[styles.tableHeaderText, styles.textRight]}>Amount</Text>
+                  </View>
+                </View>
+                <View style={styles.tableRow}>
+                  <View style={styles.tableColDesc}>
+                    <Text style={styles.tableCellText}>Currency</Text>
+                  </View>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{safe(invoiceData.currency || "JPY")}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
