@@ -8,17 +8,23 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-
+// Helper functions
+const safe = (val) => (val === null || val === undefined ? "" : String(val));
+const toNum = (val) => {
+  const n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
+};
+const fmt = (val) => {
+  const n = toNum(val);
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
   const design = templateData.design || {};
-  const accentColor = design.accentColor || "#1e40af";
   const letterheadUrl = design.letterheadUrl || null;
   const termsText = (invoiceData.termsText ?? design.termsText) || "";
   const bottomLayerUrl = design.bottomLayerUrl || null;
 
-  const bookingRef =
-    invoiceData.bookingReference || invoiceData.invoiceNo || "";
   const displayDate =
     invoiceData.date ||
     new Date().toLocaleDateString("en-GB", {
@@ -27,227 +33,232 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
       year: "numeric",
     });
 
-  
-
-  const items = Array.isArray(invoiceData.items) ? invoiceData.items : [];
-  const totalCIF = items.reduce((sum, r) => sum + toNum(r?.cif), 0);
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.pageContainer}>
-          {/* Letterhead */}
+          
+          {/* ========== LETTER HEAD ========== */}
           {letterheadUrl ? (
             <Image src={letterheadUrl} style={styles.letterhead} />
           ) : (
             <View style={styles.letterheadFallback} />
           )}
 
-          {/* Main content */}
-          <View style={styles.mainContent}>
-            {/* Invoice Header */}
-            <View style={styles.invoiceHeader}>
-              <View style={styles.invoiceHeaderLeft}>
-                <View style={styles.invoiceMetaRow}>
-                  <Text style={styles.metaLabel}>Invoice ID:</Text>
-                  <Text style={styles.metaValue}>{safe(invoiceData.invoiceId)}</Text>
+          {/* ========== INVOICE ID & DATE ========== */}
+          <View style={styles.invoiceHeader}>
+            <View style={styles.invoiceId}>
+              <Text style={styles.label}>Invoice ID</Text>
+              <Text style={styles.value}>{safe(invoiceData.invoiceId) || "--"}</Text>
+            </View>
+            <View style={styles.dateSection}>
+              <Text style={[styles.label, styles.textRight]}>Date</Text>
+              <Text style={[styles.value, styles.textRight]}>{displayDate}</Text>
+            </View>
+          </View>
+
+          {/* ========== DIVIDER ========== */}
+          <View style={styles.divider} />
+
+          {/* ========== VEHICLE IMAGE & VEHICLE INFORMATIONS AND DETAIL ========== */}
+          <View style={styles.vehicleSection}>
+            <View style={styles.splitRow}>
+              {/* Left: Vehicle Image */}
+              <View style={styles.imageColumn}>
+                {invoiceData?.vehicleImageUrl ? (
+                  <Image 
+                    src={invoiceData.vehicleImageUrl} 
+                    style={styles.vehicleImage}
+                    cache={false}
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Text style={styles.placeholderText}>Vehicle Image</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Right: Vehicle Informations and Detail */}
+              <View style={styles.infoColumn}>
+                {/* Vehicle Information */}
+                <View style={styles.infoBlock}>
+                  <Text style={styles.blockTitle}>VEHICLE INFORMATION</Text>
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Vehicle Name:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.vehicleName) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Grade:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.vehicleGrade) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Year:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.year) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Mileage:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.mileage) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Vehicle Type:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.vehicleType) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Fuel Type:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.fuelType) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Engine CC:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.engineCC) || "--"}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Report Date:</Text>
+                      <Text style={styles.infoValue}>{safe(invoiceData.reportDate) || "--"}</Text>
+                    </View>
+                  </View>
                 </View>
-               
-                <View style={styles.invoiceMetaRow}>
-                  <Text style={styles.metaLabel}>Date:</Text>
-                  <Text style={styles.metaValue}>{displayDate}</Text>
+
+                {/* Detail Section */}
+                <View style={styles.detailBlock}>
+                  <Text style={styles.blockTitle}>DETAILS</Text>
+                  <Text style={styles.detailText}>
+                    {safe(invoiceData.details) || "No details provided."}
+                  </Text>
                 </View>
               </View>
             </View>
+          </View>
 
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Vehicle Information Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>VEHICLE INFORMATION</Text>
-              <View style={styles.vehicleContent}>
-                <View style={styles.vehicleDetails}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Vehicle Name:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.vehicleName) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Grade:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.vehicleGrade) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Year:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.year) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Mileage:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.mileage) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Vehicle Type:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.vehicleType) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Fuel Type:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.fuelType) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Engine CC:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.engineCC) || "--"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Report Date:</Text>
-                    <Text style={styles.detailValue}>{safe(invoiceData.reportDate) || "--"}</Text>
-                  </View>
-                  {invoiceData.details && (
-                    <View style={styles.detailRowFull}>
-                      <Text style={styles.detailLabel}>Details:</Text>
-                      <Text style={styles.detailValue}>{safe(invoiceData.details)}</Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.vehicleImageContainer}>
-                  {invoiceData?.vehicleImage ? (
-                    <Image src={invoiceData.vehicleImage} style={styles.vehicleImage} />
-                  ) : (
-                    <View style={styles.imagePlaceholder}>
-                      <Text style={styles.placeholderText}>No Image Available</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-
-            {/* Custom Duty Breakdown */}
-            <View style={styles.section}>
+          {/* ========== DUTY + PRICE SUMMARY SIDE BY SIDE ========== */}
+          <View style={styles.sectionRow}>
+            <View style={styles.sectionHalf}>
               <Text style={styles.sectionTitle}>CUSTOM DUTY BREAKDOWN</Text>
-              <View style={styles.tableContainer}>
-                <View style={styles.tableRow}>
-                  <View style={[styles.tableCell, styles.tableCellHeader]}>
-                    <Text style={styles.tableCellText}>Description</Text>
+              <View style={styles.table}>
+                <View style={[styles.tableRow, styles.tableHeader]}>
+                  <View style={styles.tableColDesc}>
+                    <Text style={styles.tableHeaderText}>Description</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>Amount (LKR)</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableHeaderText, styles.textRight]}>Amount (LKR)</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>CID (20%)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.cid)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.cid)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>Surcharge (50% of CID)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.surcharge)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.surcharge)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>XID (CC × 3450)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.xid)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.xid)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>VEL (15,000 LKR)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.luxuryTax)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.luxuryTax)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>VAT (18%)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.vat)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.vat)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>COM/EXM/SEL (1,750 LKR)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.vetAndCom)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.vetAndCom)}</Text>
                   </View>
                 </View>
                 <View style={[styles.tableRow, styles.tableTotalRow]}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableTotalText}>Total Duty</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableTotalText}>{fmt(invoiceData.totalDuty)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableTotalText, styles.textRight]}>{fmt(invoiceData.totalDuty)}</Text>
                   </View>
                 </View>
               </View>
             </View>
 
-            {/* Price Summary */}
-            <View style={styles.section}>
+            <View style={styles.sectionHalf}>
               <Text style={styles.sectionTitle}>PRICE SUMMARY</Text>
-              <View style={styles.tableContainer}>
-                <View style={styles.tableRow}>
-                  <View style={[styles.tableCell, styles.tableCellHeader]}>
-                    <Text style={styles.tableCellText}>Description</Text>
+              <View style={styles.table}>
+                <View style={[styles.tableRow, styles.tableHeader]}>
+                  <View style={styles.tableColDesc}>
+                    <Text style={styles.tableHeaderText}>Description</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>Amount</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableHeaderText, styles.textRight]}>Amount</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>Price ({invoiceData.currency || "JPY"})</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.priceValue || invoiceData.priceYen)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.priceValue || invoiceData.priceYen)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>{invoiceData.currency || "JPY"} to LKR Rate</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{safe((invoiceData.currencyRate || invoiceData.yenRate)?.toFixed?.(2) || "2.00")}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{safe((invoiceData.currencyRate || invoiceData.yenRate)?.toFixed?.(2) || "2.00")}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>Price (LKR)</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.priceLkr)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.priceLkr)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>Total Customs Duty</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.totalCustomsDuty)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.totalCustomsDuty)}</Text>
                   </View>
                 </View>
                 <View style={styles.tableRow}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableCellText}>Clearing Charges</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableCellText}>{fmt(invoiceData.clearingCharges)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableCellText, styles.textRight]}>{fmt(invoiceData.clearingCharges)}</Text>
                   </View>
                 </View>
                 <View style={[styles.tableRow, styles.tableTotalRow]}>
-                  <View style={styles.tableCell}>
+                  <View style={styles.tableColDesc}>
                     <Text style={styles.tableTotalText}>Total Price</Text>
                   </View>
-                  <View style={[styles.tableCell, styles.tableCellRight]}>
-                    <Text style={styles.tableTotalText}>{fmt(invoiceData.totalPriceApprox)}</Text>
+                  <View style={styles.tableColAmount}>
+                    <Text style={[styles.tableTotalText, styles.textRight]}>{fmt(invoiceData.totalPriceApprox)}</Text>
                   </View>
                 </View>
               </View>
@@ -255,20 +266,20 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
           </View>
 
           {/* Spacer */}
-          <View style={{ flex: 1 }} />
+          <View style={styles.spacer} />
 
-          {/* Terms & Conditions */}
-          {!!termsText && (
-            <View style={styles.termsSection}>
-              <Text style={styles.termsTitle}>TERMS & CONDITIONS</Text>
-              <Text style={styles.termsBody}>{termsText}</Text>
+          {/* ========== FOOTER IMAGE ========== */}
+          {!!bottomLayerUrl && (
+            <View style={styles.footerSection}>
+              <Image src={bottomLayerUrl} style={styles.footerImage} />
             </View>
           )}
 
-          {/* Bottom signature */}
-          {!!bottomLayerUrl && (
-            <View style={styles.signatureRow}>
-              <Image src={bottomLayerUrl} style={styles.signatureImg} />
+          {/* Terms & Conditions (if no footer image) */}
+          {!bottomLayerUrl && !!termsText && (
+            <View style={styles.termsSection}>
+              <Text style={styles.termsTitle}>TERMS & CONDITIONS</Text>
+              <Text style={styles.termsText}>{termsText}</Text>
             </View>
           )}
         </View>
@@ -277,233 +288,241 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
   );
 };
 
-/* ---------- helpers ---------- */
-function toNum(x) {
-  const n = typeof x === "string" ? Number(x.replace(/,/g, "")) : Number(x);
-  return Number.isFinite(n) ? n : 0;
-}
-function fmt(n) {
-  const v = toNum(n);
-  if (!v) return n ? String(n) : "-";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(v);
-}
-function safe(s) {
-  return s == null ? "" : String(s);
-}
-function line(s) {
-  return s ? `\n${s}` : "";
-}
-function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/* ---------- styles ---------- */
+// ==================== STYLES ====================
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 0,
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-    fontSize: 10,
-    color: "#1f2937",
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
   },
-
   pageContainer: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100%",
+    flex: 1,
+    padding: 20,
+    paddingTop: 15,
+    paddingBottom: 15,
   },
 
+  // ===== LETTER HEAD =====
   letterhead: {
     width: "100%",
-    height: 80,
-    objectFit: "contain",
+    height: "auto",
+    marginBottom: 12,
   },
   letterheadFallback: {
-    width: "100%",
-    height: 80,
-    backgroundColor: "#1e40af",
-  },
-
-  mainContent: {
-    paddingHorizontal: 40,
-    paddingVertical: 30,
-    flexGrow: 1,
-  },
-
-  invoiceHeader: {
-    marginBottom: 20,
-  },
-  invoiceHeaderLeft: {
-    flexDirection: "column",
-  },
-  invoiceTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e40af",
+    height: 50,
     marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  invoiceMetaRow: {
-    flexDirection: "row",
-    marginBottom: 4,
-  },
-  metaLabel: {
-    fontSize: 10,
-    color: "#6b7280",
-    width: 80,
-  },
-  metaValue: {
-    fontSize: 10,
-    color: "#111827",
-    fontWeight: "bold",
   },
 
-  divider: {
-    height: 2,
-    backgroundColor: "#1e40af",
-    marginBottom: 20,
-  },
-
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 10,
-    letterSpacing: 0.3,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    paddingBottom: 4,
-  },
-
-  vehicleContent: {
+  // ===== INVOICE ID & DATE =====
+  invoiceHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 8,
   },
-  vehicleDetails: {
-    flex: 1,
-    paddingRight: 20,
-  },
-  detailRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  detailRowFull: {
+  invoiceId: {
     flexDirection: "column",
-    marginTop: 4,
   },
-  detailLabel: {
-    fontSize: 9,
+  dateSection: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
+  label: {
+    fontSize: 8,
     color: "#6b7280",
-    width: 100,
+    marginBottom: 2,
   },
-  detailValue: {
+  value: {
     fontSize: 10,
+    fontWeight: "bold",
     color: "#111827",
-    flex: 1,
   },
 
-  vehicleImageContainer: {
-    width: 180,
+  // ===== DIVIDER =====
+  divider: {
+    width: "100%",
+    height: 2,
+    backgroundColor: "#1e40af",
+    marginBottom: 12,
   },
+
+  // ===== VEHICLE SECTION (IMAGE + INFO + DETAIL) =====
+  vehicleSection: {
+    marginBottom: 12,
+  },
+  splitRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  imageColumn: {
+    width: "35%",
+  },
+  infoColumn: {
+    width: "65%",
+  },
+
+  // Vehicle Image
   vehicleImage: {
-    width: 180,
+    width: "100%",
     height: 120,
     objectFit: "cover",
-    borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderRadius: 4,
+    border: "1px solid #e5e7eb",
   },
   imagePlaceholder: {
-    width: 180,
+    width: "100%",
     height: 120,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    backgroundColor: "#f9fafb",
-    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 4,
+    border: "1px solid #e5e7eb",
     justifyContent: "center",
+    alignItems: "center",
   },
   placeholderText: {
     fontSize: 9,
     color: "#9ca3af",
   },
 
-  tableContainer: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
+  // Info Block
+  infoBlock: {
+    marginBottom: 10,
+  },
+  blockTitle: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#1e40af",
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  infoGrid: {
+    gap: 2,
+  },
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 2,
+  },
+  infoLabel: {
+    fontSize: 8,
+    color: "#4b5563",
+    width: 50,
+    marginRight: 4,
+    fontWeight: 500,
+  },
+  infoValue: {
+    fontSize: 8,
+    color: "#111827",
+    flex: 1,
+  },
+
+  // Detail Block
+  detailBlock: {
+    backgroundColor: "#f9fafb",
+    padding: 8,
+    borderRadius: 4,
+    border: "1px solid #e5e7eb",
+  },
+  detailText: {
+    fontSize: 8,
+    color: "#374151",
+    lineHeight: 1.4,
+  },
+
+  // ===== SECTIONS =====
+  section: {
+    marginBottom: 12,
+  },
+  sectionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  sectionHalf: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#1e40af",
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+
+  // ===== TABLE =====
+  table: {
+    border: "1px solid #d1d5db",
+    borderRadius: 4,
+    overflow: "hidden",
+    width: "100%",
   },
   tableRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
+    borderBottom: "1px solid #e5e7eb",
   },
-  tableCellHeader: {
+  tableHeader: {
     backgroundColor: "#f3f4f6",
-    fontWeight: "bold",
   },
-  tableCell: {
+  tableColDesc: {
+    flex: 1.6,
+    padding: 4,
+    paddingLeft: 6,
+  },
+  tableColAmount: {
     flex: 1,
-    padding: 8,
-    borderRightWidth: 1,
-    borderRightColor: "#d1d5db",
+    padding: 4,
+    paddingRight: 6,
+    justifyContent: "center",
   },
-  tableCellRight: {
-    borderRightWidth: 0,
-    alignItems: "flex-end",
-  },
-  tableCellText: {
-    fontSize: 9,
+  tableHeaderText: {
+    fontSize: 8,
+    fontWeight: "bold",
     color: "#374151",
   },
+  tableCellText: {
+    fontSize: 8,
+    color: "#1f2937",
+  },
   tableTotalRow: {
-    backgroundColor: "#f9fafb",
-    borderBottomWidth: 0,
+    backgroundColor: "#dbeafe",
+    borderBottom: "none",
   },
   tableTotalText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#1e40af",
   },
 
+  // ===== UTILITY =====
+  textRight: {
+    textAlign: "right",
+  },
+  spacer: {
+    flex: 1,
+  },
+
+  // ===== FOOTER =====
+  footerSection: {
+    marginTop: 10,
+  },
+  footerImage: {
+    width: "100%",
+    height: "auto",
+  },
+
+  // ===== TERMS (fallback if no footer) =====
   termsSection: {
-    paddingHorizontal: 40,
-    paddingVertical: 20,
-    backgroundColor: "#f9fafb",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    flexShrink: 0,
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: "#fef3c7",
+    borderRadius: 4,
+    border: "1px solid #fcd34d",
   },
   termsTitle: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-    letterSpacing: 0.3,
-  },
-  termsBody: {
     fontSize: 9,
-    color: "#4b5563",
-    lineHeight: 1.5,
+    fontWeight: "bold",
+    color: "#92400e",
+    marginBottom: 5,
   },
-
-  signatureRow: {
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    alignItems: "flex-end",
-    flexShrink: 0,
-  },
-  signatureImg: {
-    width: 140,
-    height: 60,
-    objectFit: "contain",
+  termsText: {
+    fontSize: 7,
+    color: "#78350f",
+    lineHeight: 1.4,
   },
 });
 
