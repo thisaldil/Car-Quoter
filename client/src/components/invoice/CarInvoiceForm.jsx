@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "lucide-react";
+import axios from "axios";
 
 const MAKES = [
   "TOYOTA",
@@ -230,6 +231,12 @@ const MODELS_BY_MAKE = {
 };
 
 export default function CarInvoiceForm({ onSave }) {
+  const cloudinaryUploadSeq = useRef(0);
+  const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+  const CLOUDINARY_IMAGE_UPLOAD_PRESET =
+    process.env.REACT_APP_CLOUDINARY_IMAGE_UPLOAD_PRESET ||
+    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+
   const [invoiceData, setInvoiceData] = useState({
     // Invoice ID
     invoiceId: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
@@ -382,19 +389,66 @@ export default function CarInvoiceForm({ onSave }) {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const uploadVehicleImageToCloudinary = async (imageFile) => {
+    if (!imageFile) return null;
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_IMAGE_UPLOAD_PRESET) return null;
+
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append("upload_preset", CLOUDINARY_IMAGE_UPLOAD_PRESET);
+
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      formData
+    );
+
+    return res?.data?.secure_url || res?.data?.url || null;
+  };
+
+  const setVehicleImage = async (file) => {
+    if (!file) return;
+
+    const seq = ++cloudinaryUploadSeq.current;
+
+    // Fast local preview first
+    try {
       const reader = new FileReader();
       reader.onloadend = () => {
         setInvoiceData((prev) => ({
           ...prev,
           vehicleImage: file,
-          vehicleImageUrl: reader.result,
+          vehicleImageUrl: String(reader.result || ""),
         }));
       };
       reader.readAsDataURL(file);
+    } catch {
+      setInvoiceData((prev) => ({
+        ...prev,
+        vehicleImage: file,
+      }));
     }
+
+    // Then upload to Cloudinary and replace with permanent URL
+    try {
+      const cloudUrl = await uploadVehicleImageToCloudinary(file);
+      if (!cloudUrl) return;
+      if (seq !== cloudinaryUploadSeq.current) return; // stale upload
+
+      setInvoiceData((prev) => ({
+        ...prev,
+        vehicleImage: file,
+        vehicleImageUrl: cloudUrl,
+      }));
+    } catch (err) {
+      // Keep local preview if Cloudinary upload fails
+      console.error("Cloudinary vehicle image upload failed:", err);
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVehicleImage(file);
   };
 
   const handleDragOver = (e) => {
@@ -410,17 +464,8 @@ export default function CarInvoiceForm({ onSave }) {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setInvoiceData((prev) => ({
-          ...prev,
-          vehicleImage: file,
-          vehicleImageUrl: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    setVehicleImage(file);
   };
 
   const handleSave = () => {

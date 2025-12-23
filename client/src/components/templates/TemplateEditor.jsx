@@ -67,6 +67,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
   const CLOUDINARY_UPLOAD_PRESET =
     process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+  const CLOUDINARY_IMAGE_UPLOAD_PRESET =
+    process.env.REACT_APP_CLOUDINARY_IMAGE_UPLOAD_PRESET ||
+    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
   const [bottomLayerUrl, setBottomLayerUrl] = useState("");
 
   useEffect(() => {
@@ -176,12 +179,155 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           termsText, // this wins over template.design.termsText in PdfInvoice if coded that way
         };
 
+        const forceCloudinaryJpeg = (url) => {
+          if (typeof url !== "string") return url;
+          if (!url.includes("res.cloudinary.com")) return url;
+          if (!url.includes("/upload/")) return url;
+
+          // If a transformation already exists, don't try to be clever.
+          // Otherwise inject a safe format conversion for react-pdf (jpeg/png supported).
+          const parts = url.split("/upload/");
+          if (parts.length !== 2) return url;
+          const afterUpload = parts[1];
+          if (afterUpload.startsWith("f_")) return url;
+          return `${parts[0]}/upload/f_jpg,q_auto/${afterUpload}`;
+        };
+
+        const dataUrlMime = (dataUrl) => {
+          if (typeof dataUrl !== "string") return "";
+          const m = dataUrl.match(/^data:([^;]+);base64,/i);
+          return m?.[1] || "";
+        };
+
+        const arrayBufferToBase64 = (ab) => {
+          return Buffer.from(new Uint8Array(ab)).toString("base64");
+        };
+
+        const rasterizeToPngDataUrl = async (arrayBuffer, contentType) => {
+          // Convert any raster or vector image bytes to a PNG data URL via browser decoding.
+          // This makes @react-pdf/renderer happy even for webp/svg/heic in many cases.
+          if (typeof window === "undefined") {
+            const base64 = arrayBufferToBase64(arrayBuffer);
+            return `data:${contentType || "application/octet-stream"};base64,${base64}`;
+          }
+
+          const blob = new Blob([arrayBuffer], { type: contentType || "application/octet-stream" });
+          try {
+            if (typeof createImageBitmap === "function") {
+              const bitmap = await createImageBitmap(blob);
+              const canvas = document.createElement("canvas");
+              canvas.width = bitmap.width;
+              canvas.height = bitmap.height;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) throw new Error("No canvas 2d context");
+              ctx.drawImage(bitmap, 0, 0);
+              return canvas.toDataURL("image/png");
+            }
+          } catch {
+            // Fallthrough to Image() path
+          }
+
+          // Fallback: <img> + objectURL
+          const objectUrl = URL.createObjectURL(blob);
+          try {
+            const img = await new Promise((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error("Image decode failed"));
+              el.src = objectUrl;
+            });
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("No canvas 2d context");
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL("image/png");
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
+        };
+
+        const uploadDataUrlToCloudinary = async (dataUrl) => {
+          if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_IMAGE_UPLOAD_PRESET) return null;
+          const formData = new FormData();
+          // Cloudinary accepts base64 data URLs directly as the "file" value.
+          formData.append("file", dataUrl);
+          formData.append("upload_preset", CLOUDINARY_IMAGE_UPLOAD_PRESET);
+          const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+            formData
+          );
+          return res?.data?.secure_url || res?.data?.url || null;
+        };
+
+        const embedVehicleImageForPdf = async (data) => {
+          const current = data || {};
+          const candidate =
+            (typeof current.vehicleImageUrl === "string" && current.vehicleImageUrl) ||
+            (typeof current.vehicleImage === "string" && current.vehicleImage) ||
+            "";
+
+          if (!candidate) return current;
+          // If it's a data URL but not a PDF-safe type, upload/convert it so the PDF embed will work.
+          if (candidate.startsWith("data:")) {
+            const mime = dataUrlMime(candidate);
+            // JPEG/PNG usually works directly; other types (webp/svg/heic) often won't in react-pdf.
+            if (mime === "image/jpeg" || mime === "image/jpg" || mime === "image/png") {
+              return current;
+            }
+
+            try {
+              const uploaded = await uploadDataUrlToCloudinary(candidate);
+              if (uploaded) {
+                const fetchUrl = forceCloudinaryJpeg(uploaded);
+                const res = await axios.get(fetchUrl, { responseType: "arraybuffer" });
+                const pngDataUrl = await rasterizeToPngDataUrl(
+                  res.data,
+                  res?.headers?.["content-type"] || "image/jpeg"
+                );
+                return { ...current, vehicleImageUrl: pngDataUrl };
+              }
+            } catch (err) {
+              console.warn("Failed to convert data-url vehicle image for PDF:", err);
+            }
+
+            // Last-resort: keep the data URL as-is.
+            return current;
+          }
+
+          if (!candidate.startsWith("http")) return current;
+
+          const fetchUrl = forceCloudinaryJpeg(candidate);
+          try {
+            const res = await axios.get(fetchUrl, { responseType: "arraybuffer" });
+            const contentType =
+              res?.headers?.["content-type"] ||
+              res?.headers?.["Content-Type"] ||
+              "application/octet-stream";
+
+            // If it's already JPEG/PNG, embed directly. Otherwise rasterize to PNG for PDF safety.
+            const lower = String(contentType).toLowerCase();
+            if (lower.includes("image/jpeg") || lower.includes("image/jpg") || lower.includes("image/png")) {
+              const base64 = arrayBufferToBase64(res.data);
+              const dataUrl = `data:${contentType};base64,${base64}`;
+              return { ...current, vehicleImageUrl: dataUrl };
+            }
+
+            const pngDataUrl = await rasterizeToPngDataUrl(res.data, contentType);
+            return { ...current, vehicleImageUrl: pngDataUrl };
+          } catch (err) {
+            console.warn("Failed to embed vehicle image into PDF:", err);
+            // Fallback: use the transformed URL (better chance than original)
+            return { ...current, vehicleImageUrl: fetchUrl };
+          }
+        };
+
+        const invoiceDataForPdf = await embedVehicleImageForPdf(invoiceDataWithOverrides);
+
         // Render PDF
         const blob = await pdf(
-          <PdfInvoice
-            invoiceData={invoiceDataWithOverrides}
-            templateData={updatedTemplate}
-          />
+          <PdfInvoice invoiceData={invoiceDataForPdf} templateData={updatedTemplate} />
         ).toBlob();
 
         // Guard: Cloudinary env
@@ -197,9 +343,8 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
         const cloudinaryRes = await axios.post(
-          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
-          formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`,
+          formData
         );
         const cloudinaryUrl = cloudinaryRes.data.secure_url;
 
