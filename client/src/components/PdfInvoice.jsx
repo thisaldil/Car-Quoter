@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Document,
   Page,
@@ -19,11 +19,310 @@ const fmt = (val) => {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const clamp01 = (n) => Math.max(0, Math.min(1, n));
+const hexToRgb = (hex) => {
+  if (!hex) return null;
+  const raw = String(hex).trim().replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(raw)) return null;
+  const full = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return { r, g, b };
+};
+const withAlpha = (hex, alpha) => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return undefined;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${clamp01(alpha)})`;
+};
+
+const makeStyles = ({ accentColor = "#3B82F6" } = {}) => {
+  const accentSoft = withAlpha(accentColor, 0.14) || "#dbeafe";
+  const accentSofter = withAlpha(accentColor, 0.08) || "#eef2ff";
+  const accentBorderSoft = withAlpha(accentColor, 0.35) || "#93c5fd";
+
+  return StyleSheet.create({
+    page: {
+      backgroundColor: "#ffffff",
+    },
+    pageContainer: {
+      flex: 1,
+      padding: 20,
+      paddingTop: 15,
+      paddingBottom: 15,
+    },
+
+    // ===== LETTER HEAD =====
+    letterhead: {
+      width: "100%",
+      height: "auto",
+      marginBottom: 12,
+    },
+    letterheadFallback: {
+      height: 50,
+      marginBottom: 12,
+    },
+
+    // ===== INVOICE ID & DATE =====
+    invoiceHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    invoiceId: {
+      flexDirection: "column",
+    },
+    dateSection: {
+      flexDirection: "column",
+      alignItems: "flex-end",
+    },
+    label: {
+      fontSize: 8,
+      color: "#6b7280",
+      marginBottom: 2,
+    },
+    value: {
+      fontSize: 10,
+      fontWeight: "bold",
+      color: "#111827",
+    },
+
+    // ===== DIVIDER =====
+    divider: {
+      width: "100%",
+      height: 2,
+      backgroundColor: accentColor,
+      marginBottom: 12,
+    },
+
+    // ===== VEHICLE SECTION (IMAGE + INFO + DETAIL) =====
+    vehicleSection: {
+      marginBottom: 12,
+    },
+    splitRow: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    imageColumn: {
+      width: "35%",
+    },
+    infoColumn: {
+      width: "65%",
+    },
+
+    // Vehicle Image
+    vehicleImage: {
+      width: "100%",
+      height: 120,
+      objectFit: "cover",
+      borderRadius: 4,
+      border: "1px solid #e5e7eb",
+    },
+    imagePlaceholder: {
+      width: "100%",
+      height: 120,
+      backgroundColor: "#f3f4f6",
+      borderRadius: 4,
+      border: "1px solid #e5e7eb",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    placeholderText: {
+      fontSize: 9,
+      color: "#9ca3af",
+    },
+
+    // Info Block
+    infoBlock: {
+      marginBottom: 10,
+    },
+    blockTitle: {
+      fontSize: 9,
+      fontWeight: "bold",
+      color: accentColor,
+      marginBottom: 6,
+      textTransform: "uppercase",
+    },
+    infoGrid: {
+      gap: 2,
+    },
+    infoRow: {
+      flexDirection: "row",
+      marginBottom: 2,
+    },
+    infoLabel: {
+      fontSize: 8,
+      color: "#4b5563",
+      width: 50,
+      marginRight: 4,
+      fontWeight: 500,
+    },
+    infoValue: {
+      fontSize: 8,
+      color: "#111827",
+      flex: 1,
+    },
+
+    // Detail Block
+    detailBlock: {
+      marginTop: 10,
+      backgroundColor: "#ffffff",
+      padding: 8,
+      borderRadius: 4,
+      border: "1px solid #d1d5db",
+    },
+    detailText: {
+      fontSize: 8,
+      color: "#374151",
+      lineHeight: 1.4,
+    },
+
+    // ===== SECTIONS =====
+    section: {
+      marginBottom: 12,
+    },
+    sectionRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 12,
+    },
+    sectionHalf: {
+      flex: 1,
+    },
+    sectionTitle: {
+      fontSize: 9,
+      fontWeight: "bold",
+      color: accentColor,
+      marginBottom: 6,
+      textTransform: "uppercase",
+    },
+
+    // ===== TABLE =====
+    table: {
+      border: "1px solid #d1d5db",
+      borderRadius: 4,
+      overflow: "hidden",
+      width: "100%",
+    },
+    tableRow: {
+      flexDirection: "row",
+      borderBottom: "1px solid #e5e7eb",
+    },
+    tableHeader: {
+      backgroundColor: "#f3f4f6",
+    },
+    tableColDesc: {
+      flex: 1.6,
+      padding: 4,
+      paddingLeft: 6,
+    },
+    tableColAmount: {
+      flex: 1,
+      padding: 4,
+      paddingRight: 6,
+      justifyContent: "center",
+    },
+    tableHeaderText: {
+      fontSize: 8,
+      fontWeight: "bold",
+      color: "#374151",
+    },
+    tableCellText: {
+      fontSize: 8,
+      color: "#1f2937",
+    },
+    tableTotalRow: {
+      backgroundColor: accentSoft,
+      borderBottom: "none",
+    },
+    tableTotalText: {
+      fontSize: 9,
+      fontWeight: "bold",
+      color: accentColor,
+    },
+
+    // ===== UTILITY =====
+    textRight: {
+      textAlign: "right",
+    },
+    spacer: {
+      flex: 1,
+    },
+
+    // ===== FOOTER =====
+    footerSection: {
+      marginTop: 10,
+    },
+    footerImage: {
+      width: "100%",
+      height: "auto",
+    },
+
+    // ===== TERMS (fallback if no footer) =====
+    termsSection: {
+      marginTop: 10,
+      padding: 8,
+      backgroundColor: accentSofter,
+      borderRadius: 4,
+      border: `1px solid ${accentBorderSoft}`,
+    },
+    termsTitle: {
+      fontSize: 9,
+      fontWeight: "bold",
+      color: accentColor,
+      marginBottom: 5,
+    },
+    termsText: {
+      fontSize: 7,
+      color: "#111827",
+      lineHeight: 1.4,
+    },
+  });
+};
+
 const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
   const design = templateData.design || {};
+  const accentColor = design.accentColor || "#3B82F6";
+  const styles = useMemo(() => makeStyles({ accentColor }), [accentColor]);
   const letterheadUrl = design.letterheadUrl || null;
   const termsText = (invoiceData.termsText ?? design.termsText) || "";
   const bottomLayerUrl = design.bottomLayerUrl || null;
+
+  const [vehicleImageSrc, setVehicleImageSrc] = useState("");
+
+  const resolvedVehicleImageSrc = useMemo(() => {
+    if (invoiceData?.vehicleImageUrl) return invoiceData.vehicleImageUrl;
+    if (typeof invoiceData?.vehicleImage === "string") return invoiceData.vehicleImage;
+    return vehicleImageSrc;
+  }, [invoiceData?.vehicleImageUrl, invoiceData?.vehicleImage, vehicleImageSrc]);
+
+  useEffect(() => {
+    // If a File/Blob is provided (common from <input type="file">), convert to a data URL
+    if (invoiceData?.vehicleImageUrl) return;
+    const maybeFile = invoiceData?.vehicleImage;
+    const isBlobLike =
+      typeof maybeFile === "object" &&
+      maybeFile !== null &&
+      (typeof maybeFile.arrayBuffer === "function" ||
+        typeof maybeFile.stream === "function" ||
+        typeof maybeFile.size === "number");
+
+    if (!isBlobLike) return;
+
+    let cancelled = false;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!cancelled) setVehicleImageSrc(String(reader.result || ""));
+    };
+    reader.onerror = () => {
+      if (!cancelled) setVehicleImageSrc("");
+    };
+    reader.readAsDataURL(maybeFile);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [invoiceData?.vehicleImage, invoiceData?.vehicleImageUrl]);
 
   const displayDate =
     invoiceData.date ||
@@ -65,9 +364,9 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
             <View style={styles.splitRow}>
               {/* Left: Vehicle Image */}
               <View style={styles.imageColumn}>
-                {invoiceData?.vehicleImageUrl ? (
+                {resolvedVehicleImageSrc ? (
                   <Image 
-                    src={invoiceData.vehicleImageUrl} 
+                    src={resolvedVehicleImageSrc} 
                     style={styles.vehicleImage}
                     cache={false}
                   />
@@ -287,244 +586,4 @@ const PdfInvoice = ({ invoiceData = {}, templateData = {} }) => {
     </Document>
   );
 };
-
-// ==================== STYLES ====================
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: "#ffffff",
-  },
-  pageContainer: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 15,
-    paddingBottom: 15,
-  },
-
-  // ===== LETTER HEAD =====
-  letterhead: {
-    width: "100%",
-    height: "auto",
-    marginBottom: 12,
-  },
-  letterheadFallback: {
-    height: 50,
-    marginBottom: 12,
-  },
-
-  // ===== INVOICE ID & DATE =====
-  invoiceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  invoiceId: {
-    flexDirection: "column",
-  },
-  dateSection: {
-    flexDirection: "column",
-    alignItems: "flex-end",
-  },
-  label: {
-    fontSize: 8,
-    color: "#6b7280",
-    marginBottom: 2,
-  },
-  value: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-
-  // ===== DIVIDER =====
-  divider: {
-    width: "100%",
-    height: 2,
-    backgroundColor: "#1e40af",
-    marginBottom: 12,
-  },
-
-  // ===== VEHICLE SECTION (IMAGE + INFO + DETAIL) =====
-  vehicleSection: {
-    marginBottom: 12,
-  },
-  splitRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  imageColumn: {
-    width: "35%",
-  },
-  infoColumn: {
-    width: "65%",
-  },
-
-  // Vehicle Image
-  vehicleImage: {
-    width: "100%",
-    height: 120,
-    objectFit: "cover",
-    borderRadius: 4,
-    border: "1px solid #e5e7eb",
-  },
-  imagePlaceholder: {
-    width: "100%",
-    height: 120,
-    backgroundColor: "#f3f4f6",
-    borderRadius: 4,
-    border: "1px solid #e5e7eb",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  placeholderText: {
-    fontSize: 9,
-    color: "#9ca3af",
-  },
-
-  // Info Block
-  infoBlock: {
-    marginBottom: 10,
-  },
-  blockTitle: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 6,
-    textTransform: "uppercase",
-  },
-  infoGrid: {
-    gap: 2,
-  },
-  infoRow: {
-    flexDirection: "row",
-    marginBottom: 2,
-  },
-  infoLabel: {
-    fontSize: 8,
-    color: "#4b5563",
-    width: 50,
-    marginRight: 4,
-    fontWeight: 500,
-  },
-  infoValue: {
-    fontSize: 8,
-    color: "#111827",
-    flex: 1,
-  },
-
-  // Detail Block
-  detailBlock: {
-    marginTop: 10,
-    backgroundColor: "#ffffff",
-    padding: 8,
-    borderRadius: 4,
-    border: "1px solid #d1d5db",
-  },
-  detailText: {
-    fontSize: 8,
-    color: "#374151",
-    lineHeight: 1.4,
-  },
-
-  // ===== SECTIONS =====
-  section: {
-    marginBottom: 12,
-  },
-  sectionRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 12,
-  },
-  sectionHalf: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 6,
-    textTransform: "uppercase",
-  },
-
-  // ===== TABLE =====
-  table: {
-    border: "1px solid #d1d5db",
-    borderRadius: 4,
-    overflow: "hidden",
-    width: "100%",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottom: "1px solid #e5e7eb",
-  },
-  tableHeader: {
-    backgroundColor: "#f3f4f6",
-  },
-  tableColDesc: {
-    flex: 1.6,
-    padding: 4,
-    paddingLeft: 6,
-  },
-  tableColAmount: {
-    flex: 1,
-    padding: 4,
-    paddingRight: 6,
-    justifyContent: "center",
-  },
-  tableHeaderText: {
-    fontSize: 8,
-    fontWeight: "bold",
-    color: "#374151",
-  },
-  tableCellText: {
-    fontSize: 8,
-    color: "#1f2937",
-  },
-  tableTotalRow: {
-    backgroundColor: "#dbeafe",
-    borderBottom: "none",
-  },
-  tableTotalText: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#1e40af",
-  },
-
-  // ===== UTILITY =====
-  textRight: {
-    textAlign: "right",
-  },
-  spacer: {
-    flex: 1,
-  },
-
-  // ===== FOOTER =====
-  footerSection: {
-    marginTop: 10,
-  },
-  footerImage: {
-    width: "100%",
-    height: "auto",
-  },
-
-  // ===== TERMS (fallback if no footer) =====
-  termsSection: {
-    marginTop: 10,
-    padding: 8,
-    backgroundColor: "#fef3c7",
-    borderRadius: 4,
-    border: "1px solid #fcd34d",
-  },
-  termsTitle: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#92400e",
-    marginBottom: 5,
-  },
-  termsText: {
-    fontSize: 7,
-    color: "#78350f",
-    lineHeight: 1.4,
-  },
-});
-
 export default PdfInvoice;

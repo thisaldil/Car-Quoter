@@ -14,6 +14,7 @@ import { Buffer } from "buffer";
 import { useParams, useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
 import PdfInvoice from "../PdfInvoice";
+import InvoicePreview from "../invoice/InvoicePreview";
 import toast from "react-hot-toast";
 import { ImageIcon } from "lucide-react";
 
@@ -447,162 +448,14 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   }`}
                   style={{ minHeight: 400 }}
                 >
-                 
-
-                  {/* Invoice ID */}
-                  <div className="mb-4 font-mono text-xs bg-blue-50 dark:bg-blue-900 p-3 rounded text-blue-700 dark:text-blue-300">
-                    <span className="font-semibold">Invoice ID:</span> {invoiceData?.invoiceId || "--"}
-                  </div>
-
-                  {/* Vehicle Info & Image Side by Side */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    {/* Left: Vehicle Details */}
-                    <div>
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3" style={{ color: accentColor }}>
-                        Vehicle Information
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Name:</span>
-                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleName || "--"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Grade:</span>
-                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleGrade || "--"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Year:</span>
-                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.year || "--"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Mileage:</span>
-                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.mileage || "--"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Report Date:</span>
-                          <p className="text-gray-900 dark:text-gray-100">{invoiceData?.reportDate || "--"}</p>
-                        </div>
-                        {invoiceData?.details && (
-                          <div>
-                            <span className="font-medium text-gray-600 dark:text-gray-400">Details:</span>
-                            <p className="text-gray-900 dark:text-gray-100">{invoiceData.details}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: Vehicle Image */}
-                    <div className="flex flex-col items-center justify-start">
-                      {invoiceData?.vehicleImageUrl ? (
-                        <div>
-                          <img
-                            src={invoiceData.vehicleImageUrl}
-                            alt="Vehicle"
-                            className="max-h-64 max-w-xs rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-48 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Custom Duty Breakdown Table */}
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
-                      Custom Duty Breakdown
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">CID (30%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.cid)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Surcharge (10%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.surcharge)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">XID (8%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.xid)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Luxury Tax (15%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.luxuryTax)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">VAT (18%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.vat)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Vet & Com (2%)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.vetAndCom)}
-                        </div>
-                      </div>
-                      <div className="bg-orange-50 dark:bg-orange-900 p-2 rounded border-2 border-orange-300 dark:border-orange-600 col-span-2">
-                        <div className="text-gray-600 dark:text-gray-400">Total Duty</div>
-                        <div className="font-bold text-orange-700 dark:text-orange-300">
-                          {fmt(invoiceData?.totalDuty)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price Section Table */}
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
-                      Price Section
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Price ({invoiceData?.currency || "JPY"})</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.priceValue || invoiceData?.priceYen)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">{invoiceData?.currency || "JPY"} to LKR Rate</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {(invoiceData?.currencyRate || invoiceData?.yenRate)?.toFixed(2) || "2.00"}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Price (LKR)</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.priceLkr)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Total Customs Duty</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.totalCustomsDuty)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-                        <div className="text-gray-600 dark:text-gray-400">Clearing Charges</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100">
-                          {fmt(invoiceData?.clearingCharges)}
-                        </div>
-                      </div>
-                      <div className="bg-purple-50 dark:bg-purple-900 p-2 rounded border-2 border-purple-300 dark:border-purple-600">
-                        <div className="text-gray-600 dark:text-gray-400">Total Price</div>
-                        <div className="font-bold text-purple-700 dark:text-purple-300">
-                          {fmt(invoiceData?.totalPriceApprox)}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="-m-8 -mt-10">
+                    <InvoicePreview
+                      contentOnly
+                      invoiceData={invoiceData}
+                      templateData={{
+                        design: { accentColor, letterheadUrl, termsText, bottomLayerUrl },
+                      }}
+                    />
                   </div>
                 </div>
 

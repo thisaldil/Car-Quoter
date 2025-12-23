@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 function toNum(x) {
   const n = typeof x === "string" ? Number(x.replace(/,/g, "")) : Number(x);
@@ -19,7 +19,7 @@ function sumCIF(items) {
   return (items || []).reduce((s, r) => s + toNum(r?.cif), 0);
 }
 
-export default function InvoicePreview({ invoiceData, templateData }) {
+export default function InvoicePreview({ invoiceData, templateData, contentOnly = false }) {
   // Extract template design settings
   const design = templateData?.design || {};
   const accentColor = design.accentColor || "#3B82F6";
@@ -27,10 +27,222 @@ export default function InvoicePreview({ invoiceData, templateData }) {
   const termsText = design.termsText || "";
   const bottomLayerUrl = design.bottomLayerUrl || null;
 
+  const [vehicleObjectUrl, setVehicleObjectUrl] = useState("");
+
+  const resolvedVehicleImageSrc = useMemo(() => {
+    if (invoiceData?.vehicleImageUrl) return invoiceData.vehicleImageUrl;
+    if (typeof invoiceData?.vehicleImage === "string") return invoiceData.vehicleImage;
+    return vehicleObjectUrl;
+  }, [invoiceData?.vehicleImageUrl, invoiceData?.vehicleImage, vehicleObjectUrl]);
+
+  useEffect(() => {
+    if (invoiceData?.vehicleImageUrl) return;
+    if (typeof invoiceData?.vehicleImage === "string") return;
+
+    const maybeFile = invoiceData?.vehicleImage;
+    const isBlobLike =
+      typeof maybeFile === "object" &&
+      maybeFile !== null &&
+      typeof maybeFile.size === "number";
+
+    if (!isBlobLike) return;
+
+    const url = URL.createObjectURL(maybeFile);
+    setVehicleObjectUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [invoiceData?.vehicleImage, invoiceData?.vehicleImageUrl]);
+
   // Check for dark mode (you might want to use a context or prop for this)
   const isDarkMode = 
     document.documentElement.classList.contains("dark") ||
     window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  const displayDate =
+    invoiceData?.date ||
+    invoiceData?.reportDate ||
+    new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "numeric",
+      year: "numeric",
+    });
+
+  const dutyRows = [
+    { label: "CID (20%)", value: invoiceData?.cid },
+    { label: "Surcharge (50% of CID)", value: invoiceData?.surcharge },
+    { label: "XID (CC × 3450)", value: invoiceData?.xid },
+    { label: "VEL (15,000 LKR)", value: invoiceData?.luxuryTax },
+    { label: "VAT (18%)", value: invoiceData?.vat },
+    { label: "COM/EXM/SEL (1,750 LKR)", value: invoiceData?.vetAndCom },
+  ];
+
+  const content = (
+    <div
+      className="p-8 md:p-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600"
+      style={{ minHeight: 400 }}
+    >
+        {/* INVOICE ID & DATE (match PDF layout) */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Invoice ID</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              {invoiceData?.invoiceId || "--"}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-gray-500 dark:text-gray-400">Date</div>
+            <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{displayDate}</div>
+          </div>
+        </div>
+
+        {/* DIVIDER */}
+        <div
+          className="w-full h-0.5 mb-4"
+          style={{ backgroundColor: accentColor }}
+        />
+
+        {/* VEHICLE IMAGE + INFO (match PDF layout) */}
+        <div className="flex gap-4 mb-4">
+          {/* Left: Vehicle Image */}
+          <div className="w-[35%]">
+            {resolvedVehicleImageSrc ? (
+              <img
+                src={resolvedVehicleImageSrc}
+                alt="Vehicle"
+                className="w-full h-32 rounded border border-gray-200 dark:border-gray-600 object-cover"
+              />
+            ) : (
+              <div className="w-full h-32 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-400 text-sm">
+                Vehicle Image
+              </div>
+            )}
+          </div>
+
+          {/* Right: Vehicle Information */}
+          <div className="w-[65%]">
+            <div className="text-sm font-semibold mb-2" style={{ color: accentColor }}>
+              VEHICLE INFORMATION
+            </div>
+
+            <div className="space-y-1 text-xs">
+              {[
+                { label: "Vehicle Name:", value: invoiceData?.vehicleName },
+                { label: "Grade:", value: invoiceData?.vehicleGrade },
+                { label: "Year:", value: invoiceData?.year },
+                { label: "Mileage:", value: invoiceData?.mileage },
+                { label: "Vehicle Type:", value: invoiceData?.vehicleType },
+                { label: "Fuel Type:", value: invoiceData?.fuelType },
+                { label: "Engine CC:", value: invoiceData?.engineCC },
+                { label: "Report Date:", value: invoiceData?.reportDate },
+              ].map((row) => (
+                <div key={row.label} className="flex">
+                  <div className="w-28 text-gray-600 dark:text-gray-400 font-medium">
+                    {row.label}
+                  </div>
+                  <div className="flex-1 text-gray-900 dark:text-gray-100">
+                    {row.value || "--"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* DETAILS (full width, match PDF layout) */}
+        <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-3 mb-4">
+          <div className="text-sm font-semibold mb-2" style={{ color: accentColor }}>
+            DETAILS
+          </div>
+          <div className="text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
+            {invoiceData?.details || "No details provided."}
+          </div>
+        </div>
+
+        {/* DUTY + PRICE SUMMARY SIDE BY SIDE (match PDF layout) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Custom Duty Breakdown */}
+          <div>
+            <div className="text-sm font-semibold mb-2" style={{ color: accentColor }}>
+              CUSTOM DUTY BREAKDOWN
+            </div>
+            <div className="border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-white dark:bg-gray-900">
+              <div className="flex text-xs font-semibold bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex-[1.6] px-3 py-2 text-gray-700 dark:text-gray-200">Description</div>
+                <div className="flex-1 px-3 py-2 text-right text-gray-700 dark:text-gray-200">Amount (LKR)</div>
+              </div>
+              {dutyRows.map((r) => (
+                <div
+                  key={r.label}
+                  className="flex text-xs border-b border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex-[1.6] px-3 py-2 text-gray-800 dark:text-gray-100">{r.label}</div>
+                  <div className="flex-1 px-3 py-2 text-right text-gray-800 dark:text-gray-100">{fmt(r.value)}</div>
+                </div>
+              ))}
+              <div className="flex text-xs font-bold" style={{ backgroundColor: `${accentColor}22` }}>
+                <div className="flex-[1.6] px-3 py-2" style={{ color: accentColor }}>
+                  Total Duty
+                </div>
+                <div className="flex-1 px-3 py-2 text-right" style={{ color: accentColor }}>
+                  {fmt(invoiceData?.totalDuty)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Price Summary */}
+          <div>
+            <div className="text-sm font-semibold mb-2" style={{ color: accentColor }}>
+              PRICE SUMMARY
+            </div>
+            <div className="border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-white dark:bg-gray-900">
+              <div className="flex text-xs font-semibold bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex-[1.6] px-3 py-2 text-gray-700 dark:text-gray-200">Description</div>
+                <div className="flex-1 px-3 py-2 text-right text-gray-700 dark:text-gray-200">Amount</div>
+              </div>
+
+              {[
+                {
+                  label: "Currency",
+                  value: invoiceData?.currency || "JPY",
+                },
+                {
+                  label: `Price (${invoiceData?.currency || "JPY"})`,
+                  value: fmt(invoiceData?.priceValue || invoiceData?.priceYen),
+                },
+                {
+                  label: `${invoiceData?.currency || "JPY"} to LKR Rate`,
+                  value: (invoiceData?.currencyRate || invoiceData?.yenRate)?.toFixed?.(2) || "2.00",
+                },
+                { label: "Price (LKR)", value: fmt(invoiceData?.priceLkr) },
+                { label: "Total Customs Duty", value: fmt(invoiceData?.totalCustomsDuty) },
+                { label: "Clearing Charges", value: fmt(invoiceData?.clearingCharges) },
+              ].map((r) => (
+                <div
+                  key={r.label}
+                  className="flex text-xs border-b border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex-[1.6] px-3 py-2 text-gray-800 dark:text-gray-100">{r.label}</div>
+                  <div className="flex-1 px-3 py-2 text-right text-gray-800 dark:text-gray-100">{r.value}</div>
+                </div>
+              ))}
+
+              <div className="flex text-xs font-bold" style={{ backgroundColor: `${accentColor}22` }}>
+                <div className="flex-[1.6] px-3 py-2" style={{ color: accentColor }}>
+                  Total Price
+                </div>
+                <div className="flex-1 px-3 py-2 text-right" style={{ color: accentColor }}>
+                  {fmt(invoiceData?.totalPriceApprox)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+  );
+
+  if (contentOnly) return content;
 
   return (
     <div
@@ -67,181 +279,7 @@ export default function InvoicePreview({ invoiceData, templateData }) {
       </div>
 
       {/* MAIN CONTENT */}
-      <div
-        className="p-8 md:p-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600"
-        style={{ minHeight: 400 }}
-      >
-        {/* Invoice ID and Invoice No */}
-        <div className="mb-4 space-y-2">
-         
-          <div className="font-mono text-xs bg-green-50 dark:bg-green-900 p-3 rounded text-green-700 dark:text-green-300">
-            <span className="font-semibold">Invoice No:</span> {invoiceData?.invoiceNo || "--"}
-          </div>
-        </div>
-
-        {/* Vehicle Info & Image Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-          {/* Left: Vehicle Details */}
-          <div>
-            <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3" style={{ color: accentColor }}>
-              Vehicle Information
-            </h4>
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Name:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleName || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Grade:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleGrade || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Year:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.year || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Mileage:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.mileage || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Vehicle Type:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.vehicleType || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Fuel Type:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.fuelType || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Engine CC:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.engineCC || "--"}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600 dark:text-gray-400">Report Date:</span>
-                <p className="text-gray-900 dark:text-gray-100">{invoiceData?.reportDate || "--"}</p>
-              </div>
-              {invoiceData?.details && (
-                <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-400">Details:</span>
-                  <p className="text-gray-900 dark:text-gray-100">{invoiceData.details}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Vehicle Image */}
-          <div className="flex flex-col items-center justify-start">
-            {invoiceData?.vehicleImage ? (
-              <div>
-                <img
-                  src={invoiceData.vehicleImage}
-                  alt="Vehicle"
-                  className="max-h-64 max-w-xs rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md object-cover"
-                />
-              </div>
-            ) : (
-              <div className="h-48 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Custom Duty Breakdown Table */}
-        <div className="mb-4">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
-            Custom Duty Breakdown
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">CID (20%)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.cid)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Surcharge (50% of CID)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.surcharge)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">XID (CC × 3450)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.xid)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">VEL (15,000 LKR)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.luxuryTax)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">VAT (18%)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.vat)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">COM/EXM/SEL (1,750 LKR)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.vetAndCom)}
-              </div>
-            </div>
-            <div className="bg-orange-50 dark:bg-orange-900 p-2 rounded border-2 border-orange-300 dark:border-orange-600 col-span-2">
-              <div className="text-gray-600 dark:text-gray-400">Total Duty</div>
-              <div className="font-bold text-orange-700 dark:text-orange-300">
-                {fmt(invoiceData?.totalDuty)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Price Section Table */}
-        <div className="mb-4">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2" style={{ color: accentColor }}>
-            Price Section
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Price ({invoiceData?.currency || 'JPY'})</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.priceValue || invoiceData?.priceYen)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">{invoiceData?.currency || 'JPY'} to LKR Rate</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {(invoiceData?.currencyRate || invoiceData?.yenRate)?.toFixed(2) || "2.00"}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Price (LKR)</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.priceLkr)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Total Customs Duty</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.totalCustomsDuty)}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-2 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-gray-600 dark:text-gray-400">Clearing Charges</div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100">
-                {fmt(invoiceData?.clearingCharges)}
-              </div>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900 p-2 rounded border-2 border-purple-300 dark:border-purple-600">
-              <div className="text-gray-600 dark:text-gray-400">Total Price</div>
-              <div className="font-bold text-purple-700 dark:text-purple-300">
-                {fmt(invoiceData?.totalPriceApprox)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {content}
 
       {/* FOOTER - Terms & Conditions */}
       {termsText && (
