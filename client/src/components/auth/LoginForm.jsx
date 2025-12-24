@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Respect Vite or CRA env vars for backend base URL if present
-const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+import { buildUrl } from "../../utils/api";
 
 const LoginForm = ({
   action = "/auth/login", // default to local API route (use full URL in prod if needed)
@@ -23,28 +22,31 @@ const LoginForm = ({
     }
     try {
       setBusy(true);
-      const url = action && (action.startsWith("http") || API_BASE === "") ? action : `${API_BASE.replace(/\/$/,"")}${action}`;
+      const url = buildUrl(action);
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
+      // Read body ONCE, then attempt JSON parse.
+      const raw = await res.text();
       let data = {};
-      try {
-        data = await res.json();
-      } catch (err) {
-        // fallback to text
-        const txt = await res.text();
+      if (raw) {
         try {
-          data = JSON.parse(txt || "{}");
-        } catch (_) {
-          data = { message: txt };
+          data = JSON.parse(raw);
+        } catch {
+          data = { message: raw };
         }
       }
 
       if (!res.ok) {
-        const message = data?.message || data?.error || data?.msg || "Login failed";
+        const message =
+          data?.message ||
+          data?.error ||
+          data?.msg ||
+          (raw ? String(raw).slice(0, 300) : "") ||
+          `Login failed (HTTP ${res.status})`;
         setErr(message);
         return;
       }
