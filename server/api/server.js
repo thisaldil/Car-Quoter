@@ -10,7 +10,10 @@ app.use(express.json());
 // ---- CORS ----
 const allowed = new Set([
   "http://localhost:3000",
+  "http://localhost:5173",
+  "https://car-quoter.vercel.app",
 ]);
+
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -40,7 +43,7 @@ app.use((req, res, next) => {
   next();
 });
 
-console.log("BE CID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
+
 
 // models
 require("../models/User");

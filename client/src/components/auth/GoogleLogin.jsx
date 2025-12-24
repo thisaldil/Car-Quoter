@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/api";
 
 const LoginGoogle = ({
-  clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID,
+  clientId = process.env.GOOGLE_CLIENT_ID,
   loginEndpoint = "/auth/google/token",
   registerEndpoint = "/auth/google/register",
   onSuccess,
@@ -94,7 +94,7 @@ const LoginGoogle = ({
   if (!clientId) {
     return (
       <p className="text-sm text-red-600">
-        Google sign-in is not configured. Set REACT_APP_GOOGLE_CLIENT_ID and
+        Google sign-in is not configured. Set GOOGLE_CLIENT_ID and
         rebuild.
       </p>
     );
