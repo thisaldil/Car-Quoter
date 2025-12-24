@@ -1,6 +1,27 @@
 // src/utils/api.js
 // Determine backend base URL from env (Vite or CRA)
-export const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+//
+// For Create React App builds on Vercel, env vars must be prefixed with REACT_APP_
+// and are baked in at build time.
+function resolveApiBase() {
+  const viteUrl =
+    typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_BACKEND_URL
+      : "";
+  const craUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || "";
+  const fromEnv = (viteUrl || craUrl || "").trim();
+  if (fromEnv) return fromEnv;
+
+  // Sensible production fallback for this repo's split client/server deployments.
+  // Prefer setting REACT_APP_API_URL in the frontend Vercel project.
+  if (typeof window !== "undefined") {
+    const isProd = process.env.NODE_ENV === "production";
+    if (isProd) return "https://car-quoter-server.vercel.app";
+  }
+  return "";
+}
+
+export const API_BASE = resolveApiBase();
 
 export function buildUrl(path) {
   if (!path) return API_BASE;
