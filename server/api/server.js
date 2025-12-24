@@ -11,7 +11,7 @@ app.use(express.json());
 const allowed = new Set([
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://car-quoter-server.vercel.app",
+  "https://car-quoter.vercel.app",
 ]);
 
 
