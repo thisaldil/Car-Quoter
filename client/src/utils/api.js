@@ -1,30 +1,8 @@
 // src/utils/api.js
-// Safe API base resolver for Vite + CRA + Vercel
+// Safe API base resolver for Vite
+import { getBackendUrl } from "./env";
 
-function resolveApiBase() {
-  // Vite
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    const viteUrl = import.meta.env.VITE_BACKEND_URL;
-    if (viteUrl) return viteUrl.trim();
-  }
-
-  // CRA fallback
-  if (typeof process !== "undefined") {
-    const craUrl =
-      process.env.REACT_APP_API_URL ||
-      process.env.REACT_APP_API_BASE_URL;
-    if (craUrl) return craUrl.trim();
-  }
-
-  // Production fallback (last resort)
-  if (typeof window !== "undefined") {
-    return "https://car-quoter-server.vercel.app";
-  }
-
-  return "";
-}
-
-export const API_BASE = resolveApiBase();
+export const API_BASE = getBackendUrl();
 
 export function buildUrl(path) {
   if (!path) return API_BASE;

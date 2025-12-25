@@ -1,6 +1,7 @@
 // src/auth/RequireAuth.jsx
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { buildUrl } from "../../utils/api";
 
 function decodeJwtExp(token) {
   try {
@@ -36,8 +37,7 @@ export default function RequireAuth({ children }) {
     try {
       console.log("Checking token with server...");
       const endpoint = "/user/me";
-      const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
-      const url = endpoint.startsWith("http") ? endpoint : `${base.replace(/\/$/,"")}${endpoint}`;
+      const url = buildUrl(endpoint);
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });

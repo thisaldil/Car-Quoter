@@ -17,6 +17,10 @@ import PdfInvoice from "../PdfInvoice";
 import InvoicePreview from "../invoice/InvoicePreview";
 import toast from "react-hot-toast";
 import { ImageIcon } from "lucide-react";
+import {
+  getCloudinaryCloudName,
+  getCloudinaryUploadPreset,
+} from "../../utils/env";
 
 
 
@@ -64,12 +68,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const userId = localStorage.getItem("userId");
   const previewRef = useRef();
   const [uploading, setUploading] = useState(false);
-  const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-  const CLOUDINARY_UPLOAD_PRESET =
-    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
-  const CLOUDINARY_IMAGE_UPLOAD_PRESET =
-    process.env.REACT_APP_CLOUDINARY_IMAGE_UPLOAD_PRESET ||
-    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+  const CLOUDINARY_CLOUD_NAME = getCloudinaryCloudName();
+  const CLOUDINARY_UPLOAD_PRESET = getCloudinaryUploadPreset();
+  const CLOUDINARY_IMAGE_UPLOAD_PRESET = CLOUDINARY_UPLOAD_PRESET;
   const [bottomLayerUrl, setBottomLayerUrl] = useState("");
 
   useEffect(() => {

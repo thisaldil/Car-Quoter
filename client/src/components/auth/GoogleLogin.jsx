@@ -2,24 +2,10 @@ import React from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/api";
-
-// Safe Google Client ID resolver
-function resolveGoogleClientId() {
-  // Vite
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  }
-
-  // CRA fallback
-  if (typeof process !== "undefined") {
-    return process.env.REACT_APP_GOOGLE_CLIENT_ID;
-  }
-
-  return undefined;
-}
+import { getGoogleClientId } from "../../utils/env";
 
 const LoginGoogle = ({
-  clientId = resolveGoogleClientId(),
+  clientId = getGoogleClientId() || undefined,
   loginEndpoint = "/auth/google/token",
   registerEndpoint = "/auth/google/register",
   onSuccess,

@@ -12,7 +12,6 @@
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
     "axios": "^1.8.4",
-    "dotenv": "^16.5.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.6.3",
     "html2canvas": "^1.4.1",
@@ -27,21 +26,14 @@
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.4.1",
-    "react-scripts": "5.0.1",
-    "buffer": "^6.0.3",
-    "web-vitals": "^2.1.4"
+    "buffer": "^6.0.3"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "browserslist": {
     "production": [
@@ -53,11 +45,14 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
-    ],
-    "proxy": "http://localhost:5000"
+    ]
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
     "@tailwindcss/postcss7-compat": "^2.2.17",
-    "autoprefixer": "^10.4.21"
+    "autoprefixer": "^10.4.21",
+    "jsdom": "^25.0.1",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
   }
 }

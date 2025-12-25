@@ -1,6 +1,10 @@
 import React, { useMemo, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import axios from "axios";
+import {
+  getCloudinaryCloudName,
+  getCloudinaryUploadPreset,
+} from "../../utils/env";
 
 const MAKES = [
   "TOYOTA",
@@ -232,10 +236,8 @@ const MODELS_BY_MAKE = {
 
 export default function CarInvoiceForm({ onSave }) {
   const cloudinaryUploadSeq = useRef(0);
-  const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-  const CLOUDINARY_IMAGE_UPLOAD_PRESET =
-    process.env.REACT_APP_CLOUDINARY_IMAGE_UPLOAD_PRESET ||
-    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+  const CLOUDINARY_CLOUD_NAME = getCloudinaryCloudName();
+  const CLOUDINARY_IMAGE_UPLOAD_PRESET = getCloudinaryUploadPreset();
 
   const [invoiceData, setInvoiceData] = useState({
     // Invoice ID

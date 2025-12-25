@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
+import { API_BASE } from "../../utils/api";
+import { getGoogleClientId } from "../../utils/env";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -15,8 +17,7 @@ const Register = () => {
   const [busyLocal, setBusyLocal] = useState(false);
   const [errLocal, setErrLocal] = useState("");
 
-  // Support Vite and CRA env var names for backend base URL
-  const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_API_URL || "";
+  const GOOGLE_CLIENT_ID = getGoogleClientId();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -81,7 +82,7 @@ const Register = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId={process.env.GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div
         style={{
           backgroundImage: `url(${bg})`,
