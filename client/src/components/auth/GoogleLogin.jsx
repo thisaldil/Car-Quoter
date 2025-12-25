@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../../utils/api";
 
 const LoginGoogle = ({
-  clientId = process.env.GOOGLE_CLIENT_ID,
+clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID,
   loginEndpoint = "/auth/google/token",
   registerEndpoint = "/auth/google/register",
   onSuccess,
