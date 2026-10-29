@@ -1,352 +1,249 @@
-# 🚀 [Project Name]
-
-> [One-line description — what it does and who it's for]
-
-![Project Banner](./screenshots/banner.png)
-<!-- Tip: a 1280x640px screenshot of your app's hero/dashboard works great as a banner -->
-
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-brightgreen?style=for-the-badge)](YOUR_DEPLOYED_URL_HERE)
-[![API Docs](https://img.shields.io/badge/API%20Docs-Postman-orange?style=for-the-badge)](YOUR_POSTMAN_COLLECTION_URL_HERE)
-[![GitHub](https://img.shields.io/badge/GitHub-Repo-black?style=for-the-badge&logo=github)](YOUR_GITHUB_REPO_URL_HERE)
-
----
-
-## 📌 Table of Contents
-
-- [Overview](#overview)
-- [Screenshots](#screenshots)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Endpoints](#api-endpoints)
-- [Deployment](#deployment)
-- [Author](#author)
-
----
-
-## 🧭 Overview
-
-[Write 3–5 sentences here. What problem does this solve? Who uses it? What makes it different from a basic CRUD app? Be specific about real-world value.]
-
-**Live URL:** [https://your-app.vercel.app](https://your-app.vercel.app)  
-**Backend API:** [https://your-api.onrender.com](https://your-api.onrender.com)
-
----
-
-## 📸 Screenshots
-
-### Home / Landing Page
-![Home Page](./screenshots/home.png)
-<!-- Replace with your actual screenshot path -->
-
-### Dashboard
-![Dashboard](./screenshots/dashboard.png)
-
-### [Key Feature — e.g. Product Listing / User Profile / Order Flow]
-![Feature Screenshot](./screenshots/feature-1.png)
-
-### Mobile View
-![Mobile View](./screenshots/mobile.png)
-<!-- Optional but impressive — shows you think responsively -->
-
-> 📁 Add all screenshots to a `/screenshots` folder in your repo root.
-
----
-
-## ✨ Features
-
-### 👤 User
-- [ ] [Feature 1 — e.g. Register and log in with JWT authentication]
-- [ ] [Feature 2 — e.g. View and manage personal profile]
-- [ ] [Feature 3]
-- [ ] [Feature 4]
-
-### 🛠️ Admin
-- [ ] [Admin Feature 1 — e.g. Full CRUD on products/users]
-- [ ] [Admin Feature 2 — e.g. Dashboard with analytics]
-- [ ] [Admin Feature 3]
-
-### ⚙️ System
-- [ ] Role-based access control (e.g. User / Admin)
-- [ ] JWT authentication with secure HTTP-only cookies
-- [ ] Input validation and error handling
-- [ ] [Any other system-level feature — e.g. Email notifications, file uploads, pagination]
-
----
-
-## 🛠️ Tech Stack
-
-| Layer        | Technology                          |
-|--------------|--------------------------------------|
-| Frontend     | React.js, [Tailwind CSS / Bootstrap / MUI] |
-| Backend      | Node.js, Express.js                 |
-| Database     | MongoDB, Mongoose ODM               |
-| Auth         | JWT, bcrypt                         |
-| File Upload  | [Multer / Cloudinary — if used]     |
-| Deployment   | [Vercel / Render / Railway / AWS]   |
-| Other        | [Any other lib — e.g. Nodemailer, Socket.io, dotenv] |
-
----
-
-## 🚦 Getting Started
-
-### Prerequisites
-
-Make sure you have these installed:
-
-- [Node.js](https://nodejs.org/) v18+
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- [MongoDB](https://www.mongodb.com/) (local) or a [MongoDB Atlas](https://www.mongodb.com/atlas) account
-- [Git](https://git-scm.com/)
-
----
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
-```
-
----
-
-### 2. Set Up the Backend
-
-```bash
-cd backend
-npm install
-```
-
-Create a `.env` file in the `/backend` directory (see [Environment Variables](#environment-variables) below), then:
-
-```bash
-# Development (with auto-restart)
-npm run dev
-
-# Production
-npm start
-```
-
-Backend runs on: `http://localhost:YOUR_PORT`
-
----
-
-### 3. Set Up the Frontend
-
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-
-Frontend runs on: `http://localhost:5173`
-
----
-
-## 🔐 Environment Variables
-
-Create a `.env` file inside `/backend`:
-
-```env
-PORT=YOUR_PORT
-NODE_ENV=development
-
-# MongoDB
-MONGO_URI=your_mongodb_connection_string
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-
-# Cloudinary (if used)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Email (if used)
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-
-# Add any other keys your project uses
-```
-
-> ⚠️ Never commit your `.env` file. It is already listed in `.gitignore`.
-
----
-
-## 🔌 API Endpoints
-
-**Base URL:** `http://localhost:YOUR_PORT/api/v1`  
-**Postman Collection:** [View on Postman](YOUR_POSTMAN_COLLECTION_URL_HERE)
-
----
-
-### Auth Routes — `/api/v1/auth`
-
-| Method | Endpoint    | Description         | Access |
-|--------|-------------|---------------------|--------|
-| POST   | `/register` | Register a new user | Public |
-| POST   | `/login`    | Login and get token | Public |
-| POST   | `/logout`   | Logout user         | Auth   |
-
----
-
-### [Resource 1] Routes — `/api/v1/[resource]`
-
-> Replace `[resource]` with your actual resource (e.g. `users`, `products`, `orders`)
-
-| Method | Endpoint  | Description          | Access |
-|--------|-----------|----------------------|--------|
-| GET    | `/`       | Get all [resources]  | Public / Auth |
-| GET    | `/:id`    | Get single [resource]| Public / Auth |
-| POST   | `/`       | Create [resource]    | Admin  |
-| PUT    | `/:id`    | Update [resource]    | Admin  |
-| DELETE | `/:id`    | Delete [resource]    | Admin  |
-
----
-
-### [Resource 2] Routes — `/api/v1/[resource2]`
-
-| Method | Endpoint  | Description          | Access |
-|--------|-----------|----------------------|--------|
-| GET    | `/`       | [Description]        | Auth   |
-| POST   | `/`       | [Description]        | Auth   |
-
----
-
-### Request & Response Examples
-
-**POST** `/api/v1/auth/register`
-
-```json
-// Request body
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "securepassword123"
-}
-
-// Response
-{
-  "success": true,
-  "message": "User registered successfully",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-> Add more examples for your key endpoints here.
-
----
-
-### Authentication Header
-
-Protected routes require a Bearer token:
-
-```
-Authorization: Bearer <your_jwt_token>
-```
-
----
-
-## 🚀 Deployment
-
-### Frontend — Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
-
-1. Push your frontend to GitHub
-2. Import the repo on [vercel.com](https://vercel.com)
-3. Set environment variables in the Vercel dashboard
-4. Deploy
-
-**Live Frontend:** [https://your-app.vercel.app](https://your-app.vercel.app)
-
----
-
-### Backend — Render / Railway
-
-1. Push your backend to GitHub
-2. Create a new Web Service on [render.com](https://render.com) or [railway.app](https://railway.app)
-3. Set all environment variables
-4. Set build command: `npm install` and start command: `npm start`
-
-**Live API:** [https://your-api.onrender.com](https://your-api.onrender.com)
-
----
-
-### Database — MongoDB Atlas
-
-1. Create a free cluster on [mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. Whitelist `0.0.0.0/0` for deployment access
-3. Copy the connection string into your `MONGO_URI` env variable
-
----
-
-## 📁 Project Structure
-
-```
-root/
-├── backend/
-│   ├── config/
-│   │   └── db.js                  # Database connection
-│   ├── controllers/
-│   │   └── [resource]Controller.js
-│   ├── middlewares/
-│   │   ├── authMiddleware.js
-│   │   └── errorMiddleware.js
-│   ├── models/
-│   │   └── [Resource].js
-│   ├── routes/
-│   │   └── [resource]Routes.js
-│   ├── utils/
-│   │   └── [helpers].js
-│   ├── .env                       # Not committed
-│   ├── .gitignore
-│   ├── package.json
-│   └── server.js
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── context/               # or /store for Redux
-│   │   ├── services/              # API call functions
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── .env
+# Car Quoter
+
+Car Quoter is a full-stack web application for creating, managing, and sending
+professional vehicle service invoices. Users can sign in, enter or upload
+invoice information, apply reusable templates, review generated invoices, and
+send invoices by email.
+
+## Features
+
+- Local registration and login with JWT authentication
+- Google sign-in and registration
+- Dashboard with recent invoices and revenue summaries
+- Manual vehicle and service invoice entry
+- PDF invoice upload and OCR-assisted data extraction
+- Reusable invoice templates with a rich-text editor
+- Invoice preview, PDF generation, download, and email delivery
+- Invoice history, deletion, and detail views
+- CRM and user settings pages
+- Light, dark, and system theme support
+- Cloudinary image uploads for business or vehicle assets
+
+## Tech stack
+
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 19, React Router, Vite, Tailwind-compatible CSS, Framer Motion |
+| Backend | Node.js, Express, Multer, JWT, bcrypt |
+| Database | MongoDB with Mongoose |
+| Document processing | `pdf-parse`, Tesseract.js, Google Document AI, Mindee, OpenRouter |
+| Documents | `@react-pdf/renderer`, PDF.js, jsPDF, html2canvas |
+| Deployment | Vercel-compatible frontend and server configuration |
+
+## Repository structure
+
+```text
+Car-Quoter/
+├── client/                 # React/Vite frontend
+│   ├── src/components/     # Pages and reusable UI components
+│   ├── src/utils/          # API and environment helpers
 │   └── package.json
-│
-├── screenshots/                   # UI screenshots for README
-│   ├── banner.png
-│   ├── home.png
-│   ├── dashboard.png
-│   └── mobile.png
-│
+├── server/                 # Express API
+│   ├── api/server.js       # API entry point
+│   ├── controllers/        # Request handlers
+│   ├── models/             # Mongoose models
+│   ├── routes/             # API route definitions
+│   ├── services/           # OCR and external service integrations
+│   └── package.json
 └── README.md
 ```
 
----
+## Prerequisites
 
-## 👨‍💻 Author
+- Node.js 18 or newer
+- npm
+- MongoDB database (local MongoDB or MongoDB Atlas)
+- API credentials for the optional integrations you enable
 
-**Thisal Gonsalkorala**  
-Full-Stack Software Engineer
+## Local development
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit-blue?style=flat-square)](YOUR_PORTFOLIO_URL)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](YOUR_LINKEDIN_URL)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)](https://github.com/YOUR_USERNAME)
-[![Email](https://img.shields.io/badge/Email-Contact-red?style=flat-square&logo=gmail)](mailto:tdimith10@gmail.com)
+### 1. Clone the repository
 
----
+```bash
+git clone https://github.com/thisaldil/Car-Quoter.git
+cd Car-Quoter
+```
 
-## 📄 License
+### 2. Install dependencies
 
-This project is licensed under the [MIT License](./LICENSE).
+Install dependencies independently for the client and server:
 
----
+```bash
+cd server
+npm install
 
-> Built with ☕ and TypeScript by Thisal Gonsalkorala
+cd ../client
+npm install
+```
+
+### 3. Configure the server
+
+Create `server/.env`:
+
+```env
+NODE_ENV=development
+PORT=5000
+
+# MongoDB connection string
+URI=mongodb://127.0.0.1:27017/car-quoter
+
+# JWT signing secret
+JWT_SECRET=replace-with-a-long-random-secret
+
+# Google authentication
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+
+# Cloudinary signature generation
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+
+# Optional invoice email delivery
+EMAIL_USER=your-email@example.com
+EMAIL_PASS=your-email-app-password
+
+# Optional Mindee invoice processing
+MINDEE_API_KEY=your-mindee-api-key
+```
+
+The server also uses the Google Document AI service configuration in
+`server/services/googleDocAiService.js`. Provide the required service account
+credentials securely; do not commit private keys or other credentials to Git.
+
+### 4. Configure the client
+
+Create `client/.env`:
+
+```env
+# Use the local API during development
+VITE_BACKEND_URL=http://localhost:5000
+
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+VITE_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+VITE_CLOUDINARY_UPLOAD_PRESET=your-cloudinary-upload-preset
+```
+
+`VITE_CLOUDINARY_IMAGE_UPLOAD_PRESET` can be used instead of
+`VITE_CLOUDINARY_UPLOAD_PRESET`. Only variables prefixed with `VITE_` are
+exposed to the browser, so never put private secrets in the client `.env`.
+
+### 5. Start the applications
+
+Open two terminals:
+
+```bash
+# Terminal 1
+cd server
+npm run dev
+```
+
+```bash
+# Terminal 2
+cd client
+npm run dev
+```
+
+The API is available at `http://localhost:5000` and the Vite development
+server normally runs at `http://localhost:5173`.
+
+Useful checks:
+
+```text
+GET http://localhost:5000/       API status message
+GET http://localhost:5000/health Health check
+```
+
+## Available scripts
+
+### Client
+
+Run these commands from `client/`:
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm start` | Start Vite |
+| `npm run build` | Create a production build in `client/dist` |
+| `npm run preview` | Preview the production build |
+| `npm test` | Run the Vitest test suite |
+
+### Server
+
+Run these commands from `server/`:
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Express API with Node |
+| `npm start` | Start the API with Nodemon |
+
+## API overview
+
+The server exposes these route groups:
+
+| Route group | Purpose |
+| --- | --- |
+| `/auth` | Local and Google authentication |
+| `/user` | User profile and account operations |
+| `/invoice` | Invoice upload, storage, retrieval, deletion, and email |
+| `/template` | Create, update, list, and delete invoice templates |
+| `/ocr` | Extract structured invoice data from uploaded PDFs |
+
+Protected endpoints require the JWT returned during login or registration:
+
+```http
+Authorization: Bearer <token>
+```
+
+Example authentication request:
+
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "use-a-strong-password"
+}
+```
+
+PDF upload endpoints accept `multipart/form-data`. Invoice uploads use the
+`invoice` field; OCR analysis uses the `ticket` field. Uploaded PDFs are
+limited to 5 MB on the invoice upload route.
+
+## Deployment
+
+### Client
+
+Build the client from `client/`:
+
+```bash
+npm install
+npm run build
+```
+
+Deploy the resulting `client/dist` directory to a static host such as Vercel.
+Set `VITE_BACKEND_URL` to the deployed API URL before building.
+
+### Server
+
+The server includes `server/vercel.json` for Vercel's Node runtime. When
+deploying elsewhere, use `server/api/server.js` as the application entry point,
+configure the environment variables above, and ensure the deployment platform
+can connect to MongoDB.
+
+Update the allowed frontend origins in `server/api/server.js` when deploying
+the client to a domain other than the configured production URL.
+
+## Security notes
+
+- Keep `.env` files, JWT secrets, API keys, email passwords, and service-account
+  keys out of source control.
+- Use a separate MongoDB database and credentials for development and
+  production.
+- Configure Google OAuth authorized origins and redirect settings for each
+  deployed frontend URL.
+- Restrict Cloudinary upload presets and MongoDB network access in production.
+
+## License
+
+No license file is currently included in this repository. Add a `LICENSE` file
+before distributing the project under a specific open-source license.
